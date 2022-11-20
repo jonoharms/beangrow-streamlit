@@ -2,3 +2,4 @@ __pycache__
 .vscode
 venv
 beangrow.egg-info
+.DS_store

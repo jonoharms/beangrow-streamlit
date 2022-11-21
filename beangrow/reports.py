@@ -494,17 +494,17 @@ def plot_flows(output_dir: str,
                      "date": "Date",
                      "amount": "Cash Flow Amount ($)",
                      "log": "Cash Flow Amount ($)",
-                     "is_dividend": "Dividend"
-                 })
+                     "is_dividend": "Dividend",    
+                 },hover_data={"date": True, "amount": ':.2f', "is_dividend": True})
     fig.update_traces(width=1e9)
 
     if log_plot:
-        vals = [1e1, 1e2, 1e3, 1e4, 1e5, 1e6]
+        vals = [1e1, 5e1, 1e2, 5e2, 1e3, 5e3, 1e4, 5e4, 5e4, 1e5, 5e5, 1e5, 1e6]
         pos_vals = [val for val in np.log(vals) if val < df['log'].max()]
         neg_vals = [val for val in -np.log(vals) if val > df['log'].min()]
         neg_vals.extend(pos_vals)
         text = [np.exp(val) if val > 0 else -np.exp(np.abs(val)) for val in neg_vals]
-        st.write(text)
+
         text = [f'${val:.0f}' for val in text]
         fig.update_yaxes(
             ticktext=text,

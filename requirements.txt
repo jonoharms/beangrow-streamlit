@@ -2,3 +2,6 @@ beancount
 pandas
 matplotlib
 seaborn
+streamlit
+scipy
+plotly

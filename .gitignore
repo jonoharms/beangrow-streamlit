@@ -3,3 +3,4 @@ __pycache__
 venv
 beangrow.egg-info
 .DS_store
+build/

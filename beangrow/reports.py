@@ -166,65 +166,61 @@ def write_returns_st(dirname: str,
                        title: str,
                        end_date: Date,
                        target_currency: Optional[Currency] = None):
+
     """Write out returns report to a directory with files in it."""
+    if not target_currency:
+        cost_currencies = set(r.cost_currency for r in account_data)
+        target_currency = cost_currencies.pop()
+        assert not cost_currencies, (
+            "Incompatible cost currencies {} for accounts {}".format(
+                cost_currencies, ",".join([r.account for r in account_data])))
 
-    logging.info("Writing returns dir for %s: %s", title, dirname)
+    # TOOD(blais): Prices should be plot separately, by currency.
+    # fprint("<h2>Prices</h2>")
+    # pairs = set((r.currency, r.cost_currency) for r in account_data)
+    # plots = plot_prices(dirname, pricer.price_map, pairs)
+    # for _, filename in sorted(plots.items()):
+    #     fprint('<img src={} style="width: 100%"/>'.format(filename))
 
-    with open(path.join(dirname, "index.html"), "w") as indexfile:
+    st.write("### Cash Flows")
 
-        if not target_currency:
-            cost_currencies = set(r.cost_currency for r in account_data)
-            target_currency = cost_currencies.pop()
-            assert not cost_currencies, (
-                "Incompatible cost currencies {} for accounts {}".format(
-                    cost_currencies, ",".join([r.account for r in account_data])))
+    cash_flows = returnslib.truncate_and_merge_cash_flows(pricer, account_data,
+                                                            None, end_date)
+    
+    returns = returnslib.compute_returns(cash_flows, pricer, target_currency, end_date)
 
-        # TOOD(blais): Prices should be plot separately, by currency.
-        # fprint("<h2>Prices</h2>")
-        # pairs = set((r.currency, r.cost_currency) for r in account_data)
-        # plots = plot_prices(dirname, pricer.price_map, pairs)
-        # for _, filename in sorted(plots.items()):
-        #     fprint('<img src={} style="width: 100%"/>'.format(filename))
+    transactions = data.sorted([txn for ad in account_data for txn in ad.transactions])
 
-        st.write("### Cash Flows")
+    # # Note: This is where the vast majority of the time is spent.
+    plots = plot_flows(dirname, pricer.price_map,
+                        cash_flows, transactions, returns.total, target_currency)
+    # fprint('<img src={} style="width: 100%"/>'.format(plots["flows"]))
+    # fprint('<img src={} style="width: 100%"/>'.format(plots["cumvalue"]))
 
-        cash_flows = returnslib.truncate_and_merge_cash_flows(pricer, account_data,
-                                                               None, end_date)
-        
-        returns = returnslib.compute_returns(cash_flows, pricer, target_currency, end_date)
+    # fprint("<h2>Returns</h2>")
+    # fprint(render_table(Table(["Total", "Ex-Div", "Div"],
+    #                           [[returns.total, returns.exdiv, returns.div]]),
+    #                     floatfmt="{:.2%}"))
 
-        transactions = data.sorted([txn for ad in account_data for txn in ad.transactions])
+    # # Compute table of returns over intervals.
+    # table = compute_returns_table(pricer, target_currency, account_data,
+    #                               get_calendar_intervals(TODAY))
+    # fprint("<p>", render_table(table, floatfmt="{:.1%}", classes=["full"]), "</p>")
 
-        # # Note: This is where the vast majority of the time is spent.
-        plots = plot_flows(dirname, pricer.price_map,
-                            cash_flows, transactions, returns.total, target_currency)
-        # fprint('<img src={} style="width: 100%"/>'.format(plots["flows"]))
-        # fprint('<img src={} style="width: 100%"/>'.format(plots["cumvalue"]))
+    # table = compute_returns_table(pricer, target_currency, account_data,
+    #                               get_cumulative_intervals(TODAY))
+    # fprint("<p>", render_table(table, floatfmt="{:.1%}", classes=["full"]), "</p>")
 
-        # fprint("<h2>Returns</h2>")
-        # fprint(render_table(Table(["Total", "Ex-Div", "Div"],
-        #                           [[returns.total, returns.exdiv, returns.div]]),
-        #                     floatfmt="{:.2%}"))
+    # fprint('<h2 class="new-page">Accounts</h2>')
+    # fprint("<p>Report Currency: {}</p>".format(target_currency))
+    # accounts_df = get_accounts_table(account_data)
+    # fprint(accounts_df.to_html())
 
-        # # Compute table of returns over intervals.
-        # table = compute_returns_table(pricer, target_currency, account_data,
-        #                               get_calendar_intervals(TODAY))
-        # fprint("<p>", render_table(table, floatfmt="{:.1%}", classes=["full"]), "</p>")
+    # fprint('<h2 class="new-page">Cash Flows</h2>')
+    # df = investments.cash_flows_to_table(cash_flows)
+    # fprint(df.to_html())
 
-        # table = compute_returns_table(pricer, target_currency, account_data,
-        #                               get_cumulative_intervals(TODAY))
-        # fprint("<p>", render_table(table, floatfmt="{:.1%}", classes=["full"]), "</p>")
-
-        # fprint('<h2 class="new-page">Accounts</h2>')
-        # fprint("<p>Report Currency: {}</p>".format(target_currency))
-        # accounts_df = get_accounts_table(account_data)
-        # fprint(accounts_df.to_html())
-
-        # fprint('<h2 class="new-page">Cash Flows</h2>')
-        # df = investments.cash_flows_to_table(cash_flows)
-        # fprint(df.to_html())
-
-        # fprint(RETURNS_TEMPLATE_POST)
+    # fprint(RETURNS_TEMPLATE_POST)
 
     return
 
@@ -495,7 +491,7 @@ def plot_flows(output_dir: str,
                      "amount": "Cash Flow Amount ($)",
                      "log": "Cash Flow Amount ($)",
                      "is_dividend": "Dividend",    
-                 },hover_data={"date": True, "amount": ':.2f', "is_dividend": True})
+                 },hover_name='investment', hover_data={"date": True, "amount": ':.2f', "is_dividend": True})
     fig.update_traces(width=1e9)
 
     if log_plot:

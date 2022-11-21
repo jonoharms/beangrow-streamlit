@@ -22,11 +22,7 @@ from beangrow import config as configlib
 import glob
 import streamlit as st
 
-
-@st.cache
-def load_file_cached(file):
-    return loader.load_file(file)
-
+st.set_page_config(layout="wide")
 
 def main():
     """Top-level function."""
@@ -114,7 +110,7 @@ def main():
 
     # Load the example file.
     logging.info('Reading ledger: %s', args.ledger)
-    entries, _, options_map = load_file_cached(args.ledger)
+    entries, _, options_map = loader.load_file(args.ledger)
     accounts = getters.get_accounts(entries)
     dcontext = options_map['dcontext']
 
@@ -126,17 +122,30 @@ def main():
         print(config, file=efile)
 
     # Extract data from the ledger.
+    investments_folder = args.output.joinpath('investments')
+
+
+    main_tab, investments_tab, by_type = st.tabs(['Main', 'Investments', 'Investments By Type'])
+    with main_tab:
+        st.text(f'Number of entries loaded: {len(entries)}')
+
     account_data_map = investments.extract(
         entries,
-        dcontext,
         config,
         end_date,
-        False,
-        args.output.joinpath('investments'),
+        False
     )
 
-    '# Beangrow Streamlit App'
-    st.text(f'Number of entries loaded: {len(entries)}')
+    with investments_tab:
+        # Write out a details file for each account for debugging.
+        account = st.selectbox('Select Account', [ad.account for ad in account_data_map.values()])
+        ad = account_data_map[account]
+        investments.write_account_file(dcontext, ad)
+
+    with by_type:
+        # Output transactions for each type (for debugging).
+        investments.write_transactions_by_type(account_data_map.values(), dcontext)
+
 
 
 if __name__ == '__main__':

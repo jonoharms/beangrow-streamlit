@@ -39,6 +39,7 @@ from beangrow.config_pb2 import Config
 from beangrow.config_pb2 import Investment
 from beangrow.config_pb2 import InvestmentConfig
 
+import streamlit as st
 
 # Basic type aliases.
 Account = str
@@ -445,41 +446,37 @@ def compute_balance_at(transactions: data.Entries,
 
 
 def write_account_file(dcontext: display_context.DisplayContext,
-                       account_data: AccountData,
-                       filename: str):
+                       account_data: AccountData):
     """Write out a file with details, for inspection and debugging."""
 
-    logging.info("Writing details file: %s", filename)
-    epr = printer.EntryPrinter(dcontext=dcontext, stringify_invalid_types=True)
-    os.makedirs(path.dirname(filename), exist_ok=True)
-    with open(filename, "w") as outfile:
-        fprint = partial(print, file=outfile)
-        fprint(";; -*- mode: beancount; coding: utf-8; fill-column: 400 -*-")
 
+    epr = printer.EntryPrinter(dcontext=dcontext, stringify_invalid_types=True)
+    col1, col2 = st.columns(2)
+
+    with col1:
         # Print front summary section.
-        fprint("* Summary\n")
-        fprint("Account: {}".format(account_data.account))
+        st.write("### Summary")
 
         # Print the final balance of the account.
         units_balance = account_data.balance.reduce(convert.get_units)
-        fprint("Balance: {}".format(units_balance))
+        st.write("Balance: {}".format(units_balance))
 
         # Print out those details.
-        fprint("** Category map\n")
-        fprint()
-        pprint(account_data.catmap, stream=outfile)
-        fprint("\n\n")
-
-        fprint("** Transactions\n")
-        for entry in account_data.transactions:
-            fprint(epr(entry))
-        fprint("\n\n")
+        st.write("### Category map")
+        st.write(account_data.catmap)
 
         # Flatten cash flows to a table.
-        fprint("** Cash flows\n")
+        st.write("### Cash flows\n")
         df = cash_flows_to_table(account_data.cash_flows)
-        fprint(df.to_string())
-        fprint("\n\n")
+        st.write(df)
+    
+    with col2:
+        st.write("### Transactions\n")
+        
+        for entry in account_data.transactions:
+            st.text(epr(entry))
+
+
 
 
 def cash_flows_to_table(cash_flows: List[CashFlow]) -> pandas.DataFrame:
@@ -496,8 +493,7 @@ def cash_flows_to_table(cash_flows: List[CashFlow]) -> pandas.DataFrame:
     return pandas.DataFrame(columns=header, data=rows)
 
 
-def write_transactions_by_type(output_signatures: str,
-                               account_data: AccountData,
+def write_transactions_by_type(account_data: AccountData,
                                dcontext: display_context.DisplayContext):
     """Write files of transactions by signature, for debugging."""
 
@@ -507,34 +503,32 @@ def write_transactions_by_type(output_signatures: str,
         for entry in accdata.transactions:
             signature_map[entry.meta['signature']].append(entry)
 
-    # Render them to files, for debugging.
-    os.makedirs(output_signatures, exist_ok=True)
-    for sig, sigentries in signature_map.items():
+    col1, col2 = st.columns(2)
+
+    summary = {sig: [get_description(sig), len(sigentries)] for sig, sigentries in signature_map.items()}
+    df = pandas.DataFrame(index=summary.keys(), data=summary.values(), columns=['Description', 'Number of Entries'])
+    
+    with col1:
+        st.dataframe(df, use_container_width=True)
+
+    with col2:
+        # Render them to files, for debugging.
+        sig = st.selectbox('Select Signature', signature_map.keys())
+        sigentries = signature_map[sig]
         sigentries = data.sorted(sigentries)
 
-        filename = "{}.org".format(sig)
-        with open(path.join(output_signatures, filename), "w") as catfile:
-            fprint = partial(print, file=catfile)
-            fprint(";; -*- mode: beancount; coding: utf-8; fill-column: 400 -*-")
-
-            description = get_description(sig) or "?"
-            fprint("description: {}".format(description))
-            fprint("number_entries: {}".format(len(sigentries)))
-            fprint()
-
-            epr = printer.EntryPrinter(dcontext=dcontext,
-                                       stringify_invalid_types=True)
-            for entry in sigentries:
-                fprint(epr(entry))
-                fprint()
-
+        description = get_description(sig) or "?"
+        st.write("**Description:** {}".format(description))
+        st.write("**Number of entries:** {}".format(len(sigentries)))
+        epr = printer.EntryPrinter(dcontext=dcontext,
+                                    stringify_invalid_types=True)
+        for entry in sigentries:
+            st.text(epr(entry))
 
 def extract(entries: data.Entries,
-            dcontext: display_context.DisplayContext,
             config: Config,
             end_date: Date,
-            check_explicit_flows: bool,
-            output_dir: str) -> Dict[Account, AccountData]:
+            check_explicit_flows: bool) -> Dict[Account, AccountData]:
     """Extract data from the list of entries."""
     # Note: It might be useful to have an option for "the end of its history"
     # for Ledger that aren't updated up to today.
@@ -555,14 +549,5 @@ def extract(entries: data.Entries,
     account_data = list(filter(None, account_data))
     account_data_map = {ad.account: ad for ad in account_data}
 
-    if output_dir:
-        # Write out a details file for each account for debugging.
-        for ad in account_data_map.values():
-            basename = path.join(output_dir, ad.account.replace(":", "_"))
-            write_account_file(dcontext, ad, basename + ".org")
-
-        # Output transactions for each type (for debugging).
-        write_transactions_by_type(path.join(output_dir, "signature"),
-                                   account_data, dcontext)
 
     return account_data_map

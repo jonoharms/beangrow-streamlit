@@ -489,8 +489,27 @@ def plot_flows(output_dir: str,
     log_plot = st.sidebar.checkbox('Log Plot', True)
     df['log'] = [np.log(amount) if amount > 0 else -np.log(np.abs(amount)) for amount in df['amount'] ]
     data = 'log' if log_plot else 'amount'
-    fig = px.bar(df, x='date', y=data, barmode='overlay', color='is_dividend')
+
+    fig = px.bar(df, x='date', y=data, barmode='overlay', color='is_dividend', labels={
+                     "date": "Date",
+                     "amount": "Cash Flow Amount ($)",
+                     "log": "Cash Flow Amount ($)",
+                     "is_dividend": "Dividend"
+                 })
     fig.update_traces(width=1e9)
+
+    if log_plot:
+        vals = [1e1, 1e2, 1e3, 1e4, 1e5, 1e6]
+        pos_vals = [val for val in np.log(vals) if val < df['log'].max()]
+        neg_vals = [val for val in -np.log(vals) if val > df['log'].min()]
+        neg_vals.extend(pos_vals)
+        text = [np.exp(val) if val > 0 else -np.exp(np.abs(val)) for val in neg_vals]
+        st.write(text)
+        text = [f'${val:.0f}' for val in text]
+        fig.update_yaxes(
+            ticktext=text,
+            tickvals=neg_vals
+        )
     st.plotly_chart(fig)
     st.write(df)
 

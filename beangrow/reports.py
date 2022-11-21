@@ -44,6 +44,10 @@ from beangrow import investments
 from beangrow import returns as returnslib
 from beangrow.returns import Pricer, Returns
 
+import streamlit as st
+import plotly.figure_factory as ff
+import plotly.graph_objects as go
+import plotly.express as px
 
 # Basic type aliases.
 Account = str
@@ -156,32 +160,17 @@ def compute_returns_table(pricer: Pricer,
     return _compute_returns_with_table(pricer, target_currency, account_data, intervals)[0]
 
 
-def write_returns_pdf(pdf_filename: str, *args, **kwargs) -> subprocess.Popen:
-    """Write out returns for a combined list of account account_data.."""
-    logging.info("Writing returns file: %s", pdf_filename)
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        indexfile = write_returns_html(tmpdir, *args, **kwargs)
-        command = ["google-chrome", "--headless", "--disable-gpu",
-                   "--print-to-pdf={}".format(pdf_filename), indexfile]
-        subprocess.check_call(command, stderr=open("/dev/null", "w"))
-        assert path.exists(pdf_filename)
-        logging.info("Done: file://%s", pdf_filename)
-
-
-def write_returns_html(dirname: str,
+def write_returns_st(dirname: str,
                        pricer: Pricer,
                        account_data: List[AccountData],
                        title: str,
                        end_date: Date,
-                       target_currency: Optional[Currency] = None) -> subprocess.Popen:
+                       target_currency: Optional[Currency] = None):
     """Write out returns report to a directory with files in it."""
 
     logging.info("Writing returns dir for %s: %s", title, dirname)
-    os.makedirs(dirname, exist_ok=True)
+
     with open(path.join(dirname, "index.html"), "w") as indexfile:
-        fprint = partial(print, file=indexfile)
-        fprint(RETURNS_TEMPLATE_PRE.format(style=STYLE, title=title))
 
         if not target_currency:
             cost_currencies = set(r.cost_currency for r in account_data)
@@ -197,46 +186,48 @@ def write_returns_html(dirname: str,
         # for _, filename in sorted(plots.items()):
         #     fprint('<img src={} style="width: 100%"/>'.format(filename))
 
-        fprint("<h2>Cash Flows</h2>")
+        st.write("### Cash Flows")
 
         cash_flows = returnslib.truncate_and_merge_cash_flows(pricer, account_data,
-                                                              None, end_date)
+                                                               None, end_date)
+        
         returns = returnslib.compute_returns(cash_flows, pricer, target_currency, end_date)
 
         transactions = data.sorted([txn for ad in account_data for txn in ad.transactions])
 
-        # Note: This is where the vast majority of the time is spent.
+        # # Note: This is where the vast majority of the time is spent.
         plots = plot_flows(dirname, pricer.price_map,
-                           cash_flows, transactions, returns.total, target_currency)
-        fprint('<img src={} style="width: 100%"/>'.format(plots["flows"]))
-        fprint('<img src={} style="width: 100%"/>'.format(plots["cumvalue"]))
+                            cash_flows, transactions, returns.total, target_currency)
+        # fprint('<img src={} style="width: 100%"/>'.format(plots["flows"]))
+        # fprint('<img src={} style="width: 100%"/>'.format(plots["cumvalue"]))
 
-        fprint("<h2>Returns</h2>")
-        fprint(render_table(Table(["Total", "Ex-Div", "Div"],
-                                  [[returns.total, returns.exdiv, returns.div]]),
-                            floatfmt="{:.2%}"))
+        # fprint("<h2>Returns</h2>")
+        # fprint(render_table(Table(["Total", "Ex-Div", "Div"],
+        #                           [[returns.total, returns.exdiv, returns.div]]),
+        #                     floatfmt="{:.2%}"))
 
-        # Compute table of returns over intervals.
-        table = compute_returns_table(pricer, target_currency, account_data,
-                                      get_calendar_intervals(TODAY))
-        fprint("<p>", render_table(table, floatfmt="{:.1%}", classes=["full"]), "</p>")
+        # # Compute table of returns over intervals.
+        # table = compute_returns_table(pricer, target_currency, account_data,
+        #                               get_calendar_intervals(TODAY))
+        # fprint("<p>", render_table(table, floatfmt="{:.1%}", classes=["full"]), "</p>")
 
-        table = compute_returns_table(pricer, target_currency, account_data,
-                                      get_cumulative_intervals(TODAY))
-        fprint("<p>", render_table(table, floatfmt="{:.1%}", classes=["full"]), "</p>")
+        # table = compute_returns_table(pricer, target_currency, account_data,
+        #                               get_cumulative_intervals(TODAY))
+        # fprint("<p>", render_table(table, floatfmt="{:.1%}", classes=["full"]), "</p>")
 
-        fprint('<h2 class="new-page">Accounts</h2>')
-        fprint("<p>Report Currency: {}</p>".format(target_currency))
-        accounts_df = get_accounts_table(account_data)
-        fprint(accounts_df.to_html())
+        # fprint('<h2 class="new-page">Accounts</h2>')
+        # fprint("<p>Report Currency: {}</p>".format(target_currency))
+        # accounts_df = get_accounts_table(account_data)
+        # fprint(accounts_df.to_html())
 
-        fprint('<h2 class="new-page">Cash Flows</h2>')
-        df = investments.cash_flows_to_table(cash_flows)
-        fprint(df.to_html())
+        # fprint('<h2 class="new-page">Cash Flows</h2>')
+        # df = investments.cash_flows_to_table(cash_flows)
+        # fprint(df.to_html())
 
-        fprint(RETURNS_TEMPLATE_POST)
+        # fprint(RETURNS_TEMPLATE_POST)
 
-    return indexfile.name
+    return
+
 
 
 
@@ -468,56 +459,66 @@ def plot_flows(output_dir: str,
 
     # Render cash flows.
     outplots = {}
-    dates = [f.date for f in flows]
-    dates_exdiv = [f.date for f in flows if not f.is_dividend]
-    dates_div = [f.date for f in flows if f.is_dividend]
-    #amounts = np.array([f.amount.number for f in flows])
-    amounts_exdiv = np.array([f.amount.number for f in flows if not f.is_dividend])
-    amounts_div = np.array([f.amount.number for f in flows if f.is_dividend])
 
-    fig, axs = plt.subplots(2, 1, sharex=True, figsize=[10, 4],
-                            gridspec_kw={'height_ratios': [3, 1]})
-    for ax in axs:
-        set_axis(ax, dates[0] if dates else None, dates[-1] if dates else None)
-        ax.axhline(0, color='#000', linewidth=0.2)
-        ax.vlines(dates_exdiv, 0, amounts_exdiv, linewidth=3, color='#000', alpha=0.7)
-        ax.vlines(dates_div, 0, amounts_div, linewidth=3, color='#0A0', alpha=0.7)
-    axs[1].set_yscale('symlog')
+    show_matplotlib = st.sidebar.checkbox('Show Matplotlib', False)
+    if show_matplotlib:
+        dates = [f.date for f in flows]
+        dates_exdiv = [f.date for f in flows if not f.is_dividend]
+        dates_div = [f.date for f in flows if f.is_dividend]
+        #amounts = np.array([f.amount.number for f in flows])
+        amounts_exdiv = np.array([f.amount.number for f in flows if not f.is_dividend])
+        amounts_div = np.array([f.amount.number for f in flows if f.is_dividend])
 
-    axs[0].set_title("Cash Flows")
-    axs[1].set_title("log(Cash Flows)")
-    fig.autofmt_xdate()
-    fig.tight_layout()
-    filename = path.join(output_dir, "flows.svg")
-    outplots["flows"] = "flows.svg"
-    plt.savefig(filename)
-    plt.close(fig)
+        fig, axs = plt.subplots(2, 1, sharex=True, figsize=[10, 4],
+                                gridspec_kw={'height_ratios': [3, 1]})
+        for ax in axs:
+            set_axis(ax, dates[0] if dates else None, dates[-1] if dates else None)
+            ax.axhline(0, color='#000', linewidth=0.2)
+            ax.vlines(dates_exdiv, 0, amounts_exdiv, linewidth=3, color='#000', alpha=0.7)
+            ax.vlines(dates_div, 0, amounts_div, linewidth=3, color='#0A0', alpha=0.7)
+        axs[1].set_yscale('symlog')
 
-    # Render cumulative cash flows, with returns growth.
-    lw = 0.8
-    if dates:
-        dates_all, gamounts = get_amortized_value_plot_data_from_flows(price_map, flows, returns_rate, target_currency, dates)
+        axs[0].set_title("Cash Flows")
+        axs[1].set_title("log(Cash Flows)")
+        fig.autofmt_xdate()
+        fig.tight_layout()
 
-        fig, ax = plt.subplots(figsize=[10, 4])
-        ax.set_title("Cumulative value")
-        set_axis(ax, dates[0] if dates else None, dates[-1] if dates else None)
-        ax.axhline(0, color='#000', linewidth=lw)
+        st.write(fig)
 
-        #ax.scatter(dates_all, gamounts, color='#000', alpha=0.2, s=1.0)
-        ax.plot(dates_all, gamounts, color='#000', alpha=0.7, linewidth=lw)
+    df = investments.cash_flows_to_table(flows)
+    log_plot = st.sidebar.checkbox('Log Plot', True)
+    df['log'] = [np.log(amount) if amount > 0 else -np.log(np.abs(amount)) for amount in df['amount'] ]
+    data = 'log' if log_plot else 'amount'
+    fig = px.bar(df, x='date', y=data, barmode='overlay', color='is_dividend')
+    fig.update_traces(width=1e9)
+    st.plotly_chart(fig)
+    st.write(df)
 
-    # Overlay value of assets over time.
-    value_dates, value_values = returnslib.compute_portfolio_values(price_map, transactions, target_currency)
-    ax.plot(value_dates, value_values, color='#00F', alpha=0.5, linewidth=lw)
-    ax.scatter(value_dates, value_values, color='#00F', alpha=lw, s=2)
+    # # Render cumulative cash flows, with returns growth.
+    # lw = 0.8
+    # if dates:
+    #     dates_all, gamounts = get_amortized_value_plot_data_from_flows(price_map, flows, returns_rate, target_currency, dates)
 
-    ax.legend(["Amortized value from flows", "Market value"], fontsize="xx-small")
-    fig.autofmt_xdate()
-    fig.tight_layout()
-    filename = path.join(output_dir, "cumvalue.svg")
-    outplots["cumvalue"] = "cumvalue.svg"
-    plt.savefig(filename)
-    plt.close(fig)
+    #     fig, ax = plt.subplots(figsize=[10, 4])
+    #     ax.set_title("Cumulative value")
+    #     set_axis(ax, dates[0] if dates else None, dates[-1] if dates else None)
+    #     ax.axhline(0, color='#000', linewidth=lw)
+
+    #     #ax.scatter(dates_all, gamounts, color='#000', alpha=0.2, s=1.0)
+    #     ax.plot(dates_all, gamounts, color='#000', alpha=0.7, linewidth=lw)
+
+    # # Overlay value of assets over time.
+    # value_dates, value_values = returnslib.compute_portfolio_values(price_map, transactions, target_currency)
+    # ax.plot(value_dates, value_values, color='#00F', alpha=0.5, linewidth=lw)
+    # ax.scatter(value_dates, value_values, color='#00F', alpha=lw, s=2)
+
+    # ax.legend(["Amortized value from flows", "Market value"], fontsize="xx-small")
+    # fig.autofmt_xdate()
+    # fig.tight_layout()
+    # filename = path.join(output_dir, "cumvalue.svg")
+    # outplots["cumvalue"] = "cumvalue.svg"
+    # plt.savefig(filename)
+    # plt.close(fig)
 
     return outplots
 
@@ -580,29 +581,29 @@ def generate_reports(account_data_map: Dict[Account, AccountData],
 
     # Write out a returns file for every account.
     os.makedirs(output_dir, exist_ok=True)
-    multiprocessing.set_start_method(
-        'spawn' if platform.system() == 'Windows' else 'fork')
+    # multiprocessing.set_start_method(
+    #     'spawn' if platform.system() == 'Windows' else 'fork')
     calls = []
-    for report in config.groups.group:
+    report = st.sidebar.selectbox('Group', config.groups.group, format_func=lambda x: x.name)
+    
+    adlist = [account_data_map[name] for name in report.investment]
+    assert isinstance(adlist, list)
+    assert all(isinstance(ad, AccountData) for ad in adlist)
 
-        adlist = [account_data_map[name] for name in report.investment]
-        assert isinstance(adlist, list)
-        assert all(isinstance(ad, AccountData) for ad in adlist)
+    function = write_returns_st
+    basename = path.join(output_dir, report.name)
+    filename = "{}.pdf".format(basename) if pdf else basename
+    calls.append(partial(
+        function, filename,
+        pricer, adlist, report.name,
+        end_date,
+        report.currency))
 
-        function = write_returns_pdf if pdf else write_returns_html
-        basename = path.join(output_dir, report.name)
-        filename = "{}.pdf".format(basename) if pdf else basename
-        calls.append(partial(
-            function, filename,
-            pricer, adlist, report.name,
-            end_date,
-            report.currency))
-
-        calls.append(partial(
-            write_returns_debugfile, "{}.org".format(basename),
-            pricer, adlist, report.name,
-            end_date,
-            report.currency))
+    calls.append(partial(
+        write_returns_debugfile, "{}.org".format(basename),
+        pricer, adlist, report.name,
+        end_date,
+        report.currency))
 
     if parallel:
         with multiprocessing.Pool(5) as pool:

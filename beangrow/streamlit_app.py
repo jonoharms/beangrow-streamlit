@@ -126,8 +126,6 @@ def main():
 
 
     main_tab, investments_tab, by_type = st.tabs(['Main', 'Investments', 'Investments By Type'])
-    with main_tab:
-        st.text(f'Number of entries loaded: {len(entries)}')
 
     account_data_map = investments.extract(
         entries,
@@ -145,6 +143,17 @@ def main():
     with by_type:
         # Output transactions for each type (for debugging).
         investments.write_transactions_by_type(account_data_map.values(), dcontext)
+
+    # Generate output reports.
+    output_reports = args.output.joinpath("groups")
+
+    with main_tab:
+        st.text(f'Number of entries loaded: {len(entries)}')
+        pricer = reports.generate_reports(account_data_map, config,
+                                        prices.build_price_map(entries),
+                                        end_date,
+                                        output_reports,
+                                        args.parallel, args.pdf)
 
 
 

@@ -121,11 +121,7 @@ def main():
     with open(args.output.joinpath('config.pbtxt'), 'w') as efile:
         print(config, file=efile)
 
-    # Extract data from the ledger.
-    investments_folder = args.output.joinpath('investments')
-
-
-    main_tab, investments_tab, by_type = st.tabs(['Main', 'Investments', 'Investments By Type'])
+    cash_tab, investments_tab, by_type = st.tabs(['Cash Flows', 'Investments', 'Investments By Type'])
 
     account_data_map = investments.extract(
         entries,
@@ -147,7 +143,7 @@ def main():
     # Generate output reports.
     output_reports = args.output.joinpath("groups")
 
-    with main_tab:
+    with cash_tab:
         st.text(f'Number of entries loaded: {len(entries)}')
         pricer = reports.generate_reports(account_data_map, config,
                                         prices.build_price_map(entries),

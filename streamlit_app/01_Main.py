@@ -138,6 +138,10 @@ def main():
     )
 
 
+    
+
+    st.success("Finished Reading Ledger")
+    st.text(f'Number of entries loaded: {len(entries)}')
 
 
 

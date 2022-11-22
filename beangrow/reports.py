@@ -160,7 +160,7 @@ def compute_returns_table(pricer: Pricer,
     return _compute_returns_with_table(pricer, target_currency, account_data, intervals)[0]
 
 
-def write_returns_st(dirname: str,
+def write_returns_st(
                        pricer: Pricer,
                        account_data: List[AccountData],
                        title: str,
@@ -191,7 +191,7 @@ def write_returns_st(dirname: str,
     transactions = data.sorted([txn for ad in account_data for txn in ad.transactions])
 
     # # Note: This is where the vast majority of the time is spent.
-    plots = plot_flows(dirname, pricer.price_map,
+    plots = plot_flows(pricer.price_map,
                         cash_flows, transactions, returns.total, target_currency)
     # fprint('<img src={} style="width: 100%"/>'.format(plots["flows"]))
     # fprint('<img src={} style="width: 100%"/>'.format(plots["cumvalue"]))
@@ -430,6 +430,7 @@ def get_amortized_value_plot_data_from_flows(price_map, flows, returns_rate, tar
     dates_all = [dates[0] + datetime.timedelta(days=x) for x in range(num_days)]
     gamounts = np.zeros(num_days)
     rate = (1 + returns_rate) ** (1./365)
+
     for flow in flows:
         remaining_days = (date_max - flow.date).days
         if target_currency:
@@ -444,8 +445,7 @@ def get_amortized_value_plot_data_from_flows(price_map, flows, returns_rate, tar
                 gamounts[-1] += amt
     return dates_all, gamounts
 
-def plot_flows(output_dir: str,
-               price_map: prices.PriceMap,
+def plot_flows(price_map: prices.PriceMap,
                flows: List[CashFlow],
                transactions: data.Entries,
                returns_rate: float,
@@ -456,10 +456,10 @@ def plot_flows(output_dir: str,
     outplots = {}
 
     show_matplotlib = st.sidebar.checkbox('Show Matplotlib', False)
+    dates = [f.date for f in flows]
+    dates_exdiv = [f.date for f in flows if not f.is_dividend]
+    dates_div = [f.date for f in flows if f.is_dividend]
     if show_matplotlib:
-        dates = [f.date for f in flows]
-        dates_exdiv = [f.date for f in flows if not f.is_dividend]
-        dates_div = [f.date for f in flows if f.is_dividend]
         #amounts = np.array([f.amount.number for f in flows])
         amounts_exdiv = np.array([f.amount.number for f in flows if not f.is_dividend])
         amounts_div = np.array([f.amount.number for f in flows if f.is_dividend])
@@ -507,19 +507,23 @@ def plot_flows(output_dir: str,
         )
     st.plotly_chart(fig)
     st.write(df)
+    
 
-    # # Render cumulative cash flows, with returns growth.
-    # lw = 0.8
-    # if dates:
-    #     dates_all, gamounts = get_amortized_value_plot_data_from_flows(price_map, flows, returns_rate, target_currency, dates)
+    # Render cumulative cash flows, with returns growth.
+    lw = 0.8
+    if dates:
+        dates_all, gamounts = get_amortized_value_plot_data_from_flows(price_map, flows, returns_rate, target_currency, dates)
+        df = pandas.DataFrame(index=dates_all, data=gamounts, columns= ['cumvalue'])
+        st.write(df)
 
-    #     fig, ax = plt.subplots(figsize=[10, 4])
-    #     ax.set_title("Cumulative value")
-    #     set_axis(ax, dates[0] if dates else None, dates[-1] if dates else None)
-    #     ax.axhline(0, color='#000', linewidth=lw)
+        fig, ax = plt.subplots(figsize=[10, 4])
+        ax.set_title("Cumulative value")
+        set_axis(ax, dates[0] if dates else None, dates[-1] if dates else None)
+        ax.axhline(0, color='#000', linewidth=lw)
 
-    #     #ax.scatter(dates_all, gamounts, color='#000', alpha=0.2, s=1.0)
-    #     ax.plot(dates_all, gamounts, color='#000', alpha=0.7, linewidth=lw)
+        #ax.scatter(dates_all, gamounts, color='#000', alpha=0.2, s=1.0)
+        ax.plot(dates_all, gamounts, color='#000', alpha=0.7, linewidth=lw)
+        st.write(fig)
 
     # # Overlay value of assets over time.
     # value_dates, value_values = returnslib.compute_portfolio_values(price_map, transactions, target_currency)
@@ -604,34 +608,34 @@ def generate_reports(account_data_map: Dict[Account, AccountData],
     assert isinstance(adlist, list)
     assert all(isinstance(ad, AccountData) for ad in adlist)
 
-    function = write_returns_st
-    basename = path.join(output_dir, report.name)
-    filename = "{}.pdf".format(basename) if pdf else basename
-    calls.append(partial(
-        function, filename,
-        pricer, adlist, report.name,
-        end_date,
-        report.currency))
+    write_returns_st(pricer, adlist, report.name, end_date, report.currency)
+    # basename = path.join(output_dir, report.name)
+    # filename = "{}.pdf".format(basename) if pdf else basename
+    # calls.append(partial(
+    #     function, filename,
+    #     pricer, adlist, report.name,
+    #     end_date,
+    #     report.currency))
 
-    calls.append(partial(
-        write_returns_debugfile, "{}.org".format(basename),
-        pricer, adlist, report.name,
-        end_date,
-        report.currency))
+    # calls.append(partial(
+    #     write_returns_debugfile, "{}.org".format(basename),
+    #     pricer, adlist, report.name,
+    #     end_date,
+    #     report.currency))
 
-    if parallel:
-        with multiprocessing.Pool(5) as pool:
-            asyns = []
-            for func in calls:
-                asyns.append(pool.apply_async(func))
-            for asyn in asyns:
-                asyn.wait()
-                assert asyn.successful()
-    else:
-        for func in calls:
-            func()
+    # if parallel:
+    #     with multiprocessing.Pool(5) as pool:
+    #         asyns = []
+    #         for func in calls:
+    #             asyns.append(pool.apply_async(func))
+    #         for asyn in asyns:
+    #             asyn.wait()
+    #             assert asyn.successful()
+    # else:
+    #     for func in calls:
+    #         func()
 
-    return pricer
+    # return pricer
 
 
 def generate_report_mapper(item: Tuple[Group, List[AccountData]],

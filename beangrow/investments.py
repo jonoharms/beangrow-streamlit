@@ -503,27 +503,29 @@ def write_transactions_by_type(account_data: AccountData,
         for entry in accdata.transactions:
             signature_map[entry.meta['signature']].append(entry)
 
-    col1, col2 = st.columns(2)
+    # col1, ol2 = st.columns(2)
 
     summary = {sig: [get_description(sig), len(sigentries)] for sig, sigentries in signature_map.items()}
     df = pandas.DataFrame(index=summary.keys(), data=summary.values(), columns=['Description', 'Number of Entries'])
     
-    with col1:
-        st.dataframe(df, use_container_width=True)
+    
 
-    with col2:
-        # Render them to files, for debugging.
-        sig = st.selectbox('Select Signature', signature_map.keys())
-        sigentries = signature_map[sig]
-        sigentries = data.sorted(sigentries)
+    st.write("## Summary")
+    st.dataframe(df, use_container_width=True)
 
-        description = get_description(sig) or "?"
-        st.write("**Description:** {}".format(description))
-        st.write("**Number of entries:** {}".format(len(sigentries)))
-        epr = printer.EntryPrinter(dcontext=dcontext,
-                                    stringify_invalid_types=True)
-        for entry in sigentries:
-            st.text(epr(entry))
+    st.write("## Transactions")
+    # Render them to files, for debugging.
+    sig = st.sidebar.selectbox('Select Signature', signature_map.keys())
+    sigentries = signature_map[sig]
+    sigentries = data.sorted(sigentries)
+
+    description = get_description(sig) or "?"
+    st.write("**Description:** {}".format(description))
+    st.write("**Number of entries:** {}".format(len(sigentries)))
+    epr = printer.EntryPrinter(dcontext=dcontext,
+                                stringify_invalid_types=True)
+    for entry in sigentries:
+        st.text(epr(entry))
 
 def extract(entries: data.Entries,
             config: Config,

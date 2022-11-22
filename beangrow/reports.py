@@ -182,7 +182,6 @@ def write_returns_st(dirname: str,
     # for _, filename in sorted(plots.items()):
     #     fprint('<img src={} style="width: 100%"/>'.format(filename))
 
-    st.write("### Cash Flows")
 
     cash_flows = returnslib.truncate_and_merge_cash_flows(pricer, account_data,
                                                             None, end_date)
@@ -456,7 +455,7 @@ def plot_flows(output_dir: str,
     # Render cash flows.
     outplots = {}
 
-    show_matplotlib = st.checkbox('Show Matplotlib', False)
+    show_matplotlib = st.sidebar.checkbox('Show Matplotlib', False)
     if show_matplotlib:
         dates = [f.date for f in flows]
         dates_exdiv = [f.date for f in flows if not f.is_dividend]
@@ -482,7 +481,7 @@ def plot_flows(output_dir: str,
         st.write(fig)
 
     df = investments.cash_flows_to_table(flows)
-    log_plot = st.checkbox('Log Plot', True)
+    log_plot = st.sidebar.checkbox('Log Plot', True)
     df['log'] = [np.log(amount) if amount > 0 else -np.log(np.abs(amount)) for amount in df['amount'] ]
     data = 'log' if log_plot else 'amount'
 
@@ -599,7 +598,7 @@ def generate_reports(account_data_map: Dict[Account, AccountData],
     # multiprocessing.set_start_method(
     #     'spawn' if platform.system() == 'Windows' else 'fork')
     calls = []
-    report = st.selectbox('Group', config.groups.group, format_func=lambda x: x.name)
+    report = st.sidebar.selectbox('Group', config.groups.group, format_func=lambda x: x.name)
     
     adlist = [account_data_map[name] for name in report.investment]
     assert isinstance(adlist, list)

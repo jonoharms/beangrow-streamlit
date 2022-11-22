@@ -19,7 +19,6 @@ from beangrow import investments
 from beangrow import reports
 from beangrow import config as configlib
 
-import glob
 import streamlit as st
 
 st.set_page_config(layout="wide")
@@ -98,7 +97,10 @@ def main():
         ),
     )
 
+    st.write("# Beangrow")
     args = parser.parse_args()
+    st.session_state.args = args
+
     if args.verbose:
         logging.basicConfig(
             level=logging.DEBUG, format='%(levelname)-8s: %(message)s'
@@ -118,38 +120,24 @@ def main():
     config = configlib.read_config(args.config, args.filter_reports, accounts)
     args.output.mkdir(exist_ok=True)
 
+    # set session state
+    st.session_state.entries = entries
+    st.session_state.accounts = accounts
+    st.session_state.options_map = options_map
+    st.session_state.config = config
+    st.session_state.end_date = end_date
+
     with open(args.output.joinpath('config.pbtxt'), 'w') as efile:
         print(config, file=efile)
 
-    cash_tab, investments_tab, by_type = st.tabs(['Cash Flows', 'Investments', 'Investments By Type'])
-
-    account_data_map = investments.extract(
+    st.session_state.account_data_map = investments.extract(
         entries,
         config,
         end_date,
         False
     )
 
-    with investments_tab:
-        # Write out a details file for each account for debugging.
-        account = st.selectbox('Select Account', [ad.account for ad in account_data_map.values()])
-        ad = account_data_map[account]
-        investments.write_account_file(dcontext, ad)
 
-    with by_type:
-        # Output transactions for each type (for debugging).
-        investments.write_transactions_by_type(account_data_map.values(), dcontext)
-
-    # Generate output reports.
-    output_reports = args.output.joinpath("groups")
-
-    with cash_tab:
-        st.text(f'Number of entries loaded: {len(entries)}')
-        pricer = reports.generate_reports(account_data_map, config,
-                                        prices.build_price_map(entries),
-                                        end_date,
-                                        output_reports,
-                                        args.parallel, args.pdf)
 
 
 

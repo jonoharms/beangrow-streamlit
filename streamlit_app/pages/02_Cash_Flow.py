@@ -4,6 +4,8 @@ from beangrow import reports
 import streamlit as st
 from beangrow.returns import Pricer, Returns
 from beangrow import returns as returnslib
+from beangrow import investments
+from beangrow import reports
 from beancount.core import data
 
 def main():
@@ -52,8 +54,17 @@ def main():
 
     transactions = data.sorted([txn for ad in account_data for txn in ad.transactions])
 
-    plots = reports.plot_flows(pricer.price_map,
-                        cash_flows, transactions, returns.total, target_currency)
+    # Render cash flows.
+    show_pyplot = st.sidebar.checkbox('Show pyplot plot', False)
+    if show_pyplot:
+        fig = reports.plot_flows_pyplot(cash_flows)
+        st.write(fig)
+
+    log_plot = st.sidebar.checkbox('Log Plot', True)
+    df = investments.cash_flows_to_table(cash_flows)
+    fig = reports.plot_flows_plotly(df, log_plot)
+    st.plotly_chart(fig)
+    st.write(df)
 
 if __name__ == '__main__':
     main()

@@ -445,43 +445,33 @@ def get_amortized_value_plot_data_from_flows(price_map, flows, returns_rate, tar
                 gamounts[-1] += amt
     return dates_all, gamounts
 
-def plot_flows(price_map: prices.PriceMap,
-               flows: List[CashFlow],
-               transactions: data.Entries,
-               returns_rate: float,
-               target_currency: Optional[Currency] = None) -> Dict[str, str]:
-    """Produce plots from cash flows and returns, and more."""
+def plot_flows_pyplot(flows: list[CashFlow]):
 
-    # Render cash flows.
-    outplots = {}
-
-    show_matplotlib = st.sidebar.checkbox('Show Matplotlib', False)
     dates = [f.date for f in flows]
     dates_exdiv = [f.date for f in flows if not f.is_dividend]
     dates_div = [f.date for f in flows if f.is_dividend]
-    if show_matplotlib:
-        #amounts = np.array([f.amount.number for f in flows])
-        amounts_exdiv = np.array([f.amount.number for f in flows if not f.is_dividend])
-        amounts_div = np.array([f.amount.number for f in flows if f.is_dividend])
 
-        fig, axs = plt.subplots(2, 1, sharex=True, figsize=[10, 4],
-                                gridspec_kw={'height_ratios': [3, 1]})
-        for ax in axs:
-            set_axis(ax, dates[0] if dates else None, dates[-1] if dates else None)
-            ax.axhline(0, color='#000', linewidth=0.2)
-            ax.vlines(dates_exdiv, 0, amounts_exdiv, linewidth=3, color='#000', alpha=0.7)
-            ax.vlines(dates_div, 0, amounts_div, linewidth=3, color='#0A0', alpha=0.7)
-        axs[1].set_yscale('symlog')
+    amounts_exdiv = np.array([f.amount.number for f in flows if not f.is_dividend])
+    amounts_div = np.array([f.amount.number for f in flows if f.is_dividend])
 
-        axs[0].set_title("Cash Flows")
-        axs[1].set_title("log(Cash Flows)")
-        fig.autofmt_xdate()
-        fig.tight_layout()
+    fig, axs = plt.subplots(2, 1, sharex=True, figsize=[10, 4],
+                            gridspec_kw={'height_ratios': [3, 1]})
+    for ax in axs:
+        set_axis(ax, dates[0] if dates else None, dates[-1] if dates else None)
+        ax.axhline(0, color='#000', linewidth=0.2)
+        ax.vlines(dates_exdiv, 0, amounts_exdiv, linewidth=3, color='#000', alpha=0.7)
+        ax.vlines(dates_div, 0, amounts_div, linewidth=3, color='#0A0', alpha=0.7)
+    axs[1].set_yscale('symlog')
 
-        st.write(fig)
+    axs[0].set_title("Cash Flows")
+    axs[1].set_title("log(Cash Flows)")
+    fig.autofmt_xdate()
+    fig.tight_layout()
 
-    df = investments.cash_flows_to_table(flows)
-    log_plot = st.sidebar.checkbox('Log Plot', True)
+    return fig
+
+def plot_flows_plotly(flows: pandas.DataFrame, log_plot: bool = True):
+    df = flows.copy()
     df['log'] = [np.log(amount) if amount > 0 else -np.log(np.abs(amount)) for amount in df['amount'] ]
     data = 'log' if log_plot else 'amount'
 
@@ -505,25 +495,44 @@ def plot_flows(price_map: prices.PriceMap,
             ticktext=text,
             tickvals=neg_vals
         )
+    
+    return fig
+
+def plot_flows(price_map: prices.PriceMap,
+               flows: List[CashFlow],
+               transactions: data.Entries,
+               returns_rate: float,
+               target_currency: Optional[Currency] = None):
+    """Produce plots from cash flows and returns, and more."""
+
+    # Render cash flows.
+    show_pyplot = st.sidebar.checkbox('Show pyplot plot', False)
+    if show_pyplot:
+        fig = plot_flows_pyplot(flows)
+        st.write(fig)
+
+    log_plot = st.sidebar.checkbox('Log Plot', True)
+    df = investments.cash_flows_to_table(flows)
+    fig = plot_flows_plotly(df, log_plot)
     st.plotly_chart(fig)
     st.write(df)
     
 
     # Render cumulative cash flows, with returns growth.
-    lw = 0.8
-    if dates:
-        dates_all, gamounts = get_amortized_value_plot_data_from_flows(price_map, flows, returns_rate, target_currency, dates)
-        df = pandas.DataFrame(index=dates_all, data=gamounts, columns= ['cumvalue'])
-        st.write(df)
+    # lw = 0.8
+    # if dates:
+    #     dates_all, gamounts = get_amortized_value_plot_data_from_flows(price_map, flows, returns_rate, target_currency, dates)
+    #     df = pandas.DataFrame(index=dates_all, data=gamounts, columns= ['cumvalue'])
+    #     st.write(df)
 
-        fig, ax = plt.subplots(figsize=[10, 4])
-        ax.set_title("Cumulative value")
-        set_axis(ax, dates[0] if dates else None, dates[-1] if dates else None)
-        ax.axhline(0, color='#000', linewidth=lw)
+    #     fig, ax = plt.subplots(figsize=[10, 4])
+    #     ax.set_title("Cumulative value")
+    #     set_axis(ax, dates[0] if dates else None, dates[-1] if dates else None)
+    #     ax.axhline(0, color='#000', linewidth=lw)
 
-        #ax.scatter(dates_all, gamounts, color='#000', alpha=0.2, s=1.0)
-        ax.plot(dates_all, gamounts, color='#000', alpha=0.7, linewidth=lw)
-        st.write(fig)
+    #     #ax.scatter(dates_all, gamounts, color='#000', alpha=0.2, s=1.0)
+    #     ax.plot(dates_all, gamounts, color='#000', alpha=0.7, linewidth=lw)
+    #     st.write(fig)
 
     # # Overlay value of assets over time.
     # value_dates, value_values = returnslib.compute_portfolio_values(price_map, transactions, target_currency)
@@ -538,7 +547,7 @@ def plot_flows(price_map: prices.PriceMap,
     # plt.savefig(filename)
     # plt.close(fig)
 
-    return outplots
+    return
 
 
 

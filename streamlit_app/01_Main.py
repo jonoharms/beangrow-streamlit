@@ -99,49 +99,41 @@ def main():
 
     st.write("# Beangrow")
     args = parser.parse_args()
-    st.session_state.args = args
+    if 'args' not in st.session_state:
+        st.session_state.args = args
 
-    if args.verbose:
-        logging.basicConfig(
-            level=logging.DEBUG, format='%(levelname)-8s: %(message)s'
+        if args.verbose:
+            logging.basicConfig(
+                level=logging.DEBUG, format='%(levelname)-8s: %(message)s'
+            )
+            logging.getLogger('matplotlib.font_manager').disabled = True
+
+        # Figure out end date.
+        end_date = args.end_date or datetime.date.today()
+
+        # Load the example file.
+        logging.info('Reading ledger: %s', args.ledger)
+        entries, _, options_map = loader.load_file(args.ledger)
+        accounts = getters.get_accounts(entries)
+        dcontext = options_map['dcontext']
+
+        # Load, filter and expand the configuration.
+        config = configlib.read_config(args.config, args.filter_reports, accounts)
+
+        st.session_state.entries = entries
+        st.session_state.accounts = accounts
+        st.session_state.options_map = options_map
+        st.session_state.config = config
+        st.session_state.end_date = end_date
+
+        st.session_state.account_data_map = investments.extract(
+            entries,
+            config,
+            end_date,
+            False
         )
-        logging.getLogger('matplotlib.font_manager').disabled = True
-
-    # Figure out end date.
-    end_date = args.end_date or datetime.date.today()
-
-    # Load the example file.
-    logging.info('Reading ledger: %s', args.ledger)
-    entries, _, options_map = loader.load_file(args.ledger)
-    accounts = getters.get_accounts(entries)
-    dcontext = options_map['dcontext']
-
-    # Load, filter and expand the configuration.
-    config = configlib.read_config(args.config, args.filter_reports, accounts)
-    args.output.mkdir(exist_ok=True)
-
-    # set session state
-    st.session_state.entries = entries
-    st.session_state.accounts = accounts
-    st.session_state.options_map = options_map
-    st.session_state.config = config
-    st.session_state.end_date = end_date
-
-    with open(args.output.joinpath('config.pbtxt'), 'w') as efile:
-        print(config, file=efile)
-
-    st.session_state.account_data_map = investments.extract(
-        entries,
-        config,
-        end_date,
-        False
-    )
-
-
-    
-
-    st.success("Finished Reading Ledger")
-    st.text(f'Number of entries loaded: {len(entries)}')
+        st.success("Finished Reading Ledger")
+        st.text(f'Number of entries loaded: {len(entries)}')
 
 
 

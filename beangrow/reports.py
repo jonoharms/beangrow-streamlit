@@ -498,6 +498,31 @@ def plot_flows_plotly(flows: pandas.DataFrame, log_plot: bool = True):
     
     return fig
 
+def plot_cumulative_flows(flows, dates_all, gamounts, value_dates, value_values):
+
+    # Render cumulative cash flows, with returns growth.
+    lw = 0.8
+    dates = [f.date for f in flows]
+   
+
+    fig, ax = plt.subplots(figsize=[10, 4])
+    ax.set_title("Cumulative value")
+    set_axis(ax, dates[0] if dates else None, dates[-1] if dates else None)
+    ax.axhline(0, color='#000', linewidth=lw)
+
+    #ax.scatter(dates_all, gamounts, color='#000', alpha=0.2, s=1.0)
+    ax.plot(dates_all, gamounts, color='#000', alpha=0.7, linewidth=lw)
+
+    # Overlay value of assets over time.
+    ax.plot(value_dates, value_values, color='#00F', alpha=0.5, linewidth=lw)
+    ax.scatter(value_dates, value_values, color='#00F', alpha=lw, s=2)
+    ax.legend(["Amortized value from flows", "Market value"], fontsize="xx-small")
+    fig.autofmt_xdate()
+    fig.tight_layout()
+
+
+    return fig
+
 def plot_flows(price_map: prices.PriceMap,
                flows: List[CashFlow],
                transactions: data.Entries,
@@ -519,33 +544,33 @@ def plot_flows(price_map: prices.PriceMap,
     
 
     # Render cumulative cash flows, with returns growth.
-    # lw = 0.8
-    # if dates:
-    #     dates_all, gamounts = get_amortized_value_plot_data_from_flows(price_map, flows, returns_rate, target_currency, dates)
-    #     df = pandas.DataFrame(index=dates_all, data=gamounts, columns= ['cumvalue'])
-    #     st.write(df)
+    lw = 0.8
+    dates = [f.date for f in flows]
+    dates_all, gamounts = get_amortized_value_plot_data_from_flows(price_map, flows, returns_rate, target_currency, dates)
+    df = pandas.DataFrame(index=dates_all, data=gamounts, columns= ['cumvalue'])
+    st.write(df)
 
-    #     fig, ax = plt.subplots(figsize=[10, 4])
-    #     ax.set_title("Cumulative value")
-    #     set_axis(ax, dates[0] if dates else None, dates[-1] if dates else None)
-    #     ax.axhline(0, color='#000', linewidth=lw)
+    fig, ax = plt.subplots(figsize=[10, 4])
+    ax.set_title("Cumulative value")
+    set_axis(ax, dates[0] if dates else None, dates[-1] if dates else None)
+    ax.axhline(0, color='#000', linewidth=lw)
 
-    #     #ax.scatter(dates_all, gamounts, color='#000', alpha=0.2, s=1.0)
-    #     ax.plot(dates_all, gamounts, color='#000', alpha=0.7, linewidth=lw)
-    #     st.write(fig)
+    #ax.scatter(dates_all, gamounts, color='#000', alpha=0.2, s=1.0)
+    ax.plot(dates_all, gamounts, color='#000', alpha=0.7, linewidth=lw)
+    st.write(fig)
 
-    # # Overlay value of assets over time.
-    # value_dates, value_values = returnslib.compute_portfolio_values(price_map, transactions, target_currency)
-    # ax.plot(value_dates, value_values, color='#00F', alpha=0.5, linewidth=lw)
-    # ax.scatter(value_dates, value_values, color='#00F', alpha=lw, s=2)
+    # Overlay value of assets over time.
+    value_dates, value_values = returnslib.compute_portfolio_values(price_map, transactions, target_currency)
+    ax.plot(value_dates, value_values, color='#00F', alpha=0.5, linewidth=lw)
+    ax.scatter(value_dates, value_values, color='#00F', alpha=lw, s=2)
 
-    # ax.legend(["Amortized value from flows", "Market value"], fontsize="xx-small")
-    # fig.autofmt_xdate()
-    # fig.tight_layout()
-    # filename = path.join(output_dir, "cumvalue.svg")
-    # outplots["cumvalue"] = "cumvalue.svg"
-    # plt.savefig(filename)
-    # plt.close(fig)
+    ax.legend(["Amortized value from flows", "Market value"], fontsize="xx-small")
+    fig.autofmt_xdate()
+    fig.tight_layout()
+    filename = path.join(output_dir, "cumvalue.svg")
+    outplots["cumvalue"] = "cumvalue.svg"
+    plt.savefig(filename)
+    plt.close(fig)
 
     return
 

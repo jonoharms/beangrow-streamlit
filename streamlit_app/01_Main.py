@@ -19,7 +19,12 @@ from beangrow import investments
 from beangrow import reports
 from beangrow import config as configlib
 
+from beangrow.returns import Pricer
+from beangrow import returns as returnslib
+from beancount.core import data
+
 import streamlit as st
+import pandas as pd
 
 st.set_page_config(layout="wide")
 
@@ -99,6 +104,7 @@ def main():
 
     st.write("# Beangrow")
     args = parser.parse_args()
+    end_date = args.end_date or datetime.date.today()
     if 'args' not in st.session_state:
         st.session_state.args = args
 
@@ -109,7 +115,7 @@ def main():
             logging.getLogger('matplotlib.font_manager').disabled = True
 
         # Figure out end date.
-        end_date = args.end_date or datetime.date.today()
+        
 
         # Load the example file.
         logging.info('Reading ledger: %s', args.ledger)
@@ -134,6 +140,47 @@ def main():
         )
         st.success("Finished Reading Ledger")
         st.text(f'Number of entries loaded: {len(entries)}')
+
+
+    report = st.sidebar.selectbox('Group', st.session_state.config.groups.group, format_func=lambda x: x.name)
+    price_map = prices.build_price_map(st.session_state.entries)
+    pricer = Pricer(price_map)
+    account_data = [st.session_state.account_data_map[name] for name in report.investment]
+
+    target_currency = report.currency
+    if not target_currency:
+        cost_currencies = set(r.cost_currency for r in account_data)
+        target_currency = cost_currencies.pop()
+        assert not cost_currencies, (
+            "Incompatible cost currencies {} for accounts {}".format(
+                cost_currencies, ",".join([r.account for r in account_data])))
+
+    cash_flows = returnslib.truncate_and_merge_cash_flows(pricer, account_data,
+                                                            None, end_date)
+    
+    returns = returnslib.compute_returns(cash_flows, pricer, target_currency, end_date)
+
+    transactions = data.sorted([txn for ad in account_data for txn in ad.transactions])
+
+    # Render cash flows.
+    show_pyplot = st.sidebar.checkbox('Show pyplot plot', False)
+    if show_pyplot:
+        fig = reports.plot_flows_pyplot(cash_flows)
+        st.write(fig)
+
+    log_plot = st.sidebar.checkbox('Log Plot', True)
+    df = investments.cash_flows_to_table(cash_flows)
+    fig = reports.plot_flows_plotly(df, log_plot)
+    st.plotly_chart(fig)
+    st.write(df)
+
+    dates = [f.date for f in cash_flows]
+    dates_all, gamounts = reports.get_amortized_value_plot_data_from_flows(price_map, cash_flows, returns.total, target_currency, dates)
+    value_dates, value_values = returnslib.compute_portfolio_values(price_map, transactions, target_currency)
+    df = pd.DataFrame(index=dates_all, data=gamounts, columns= ['cumvalue'])
+    st.write(df)
+    fig = reports.plot_cumulative_flows(cash_flows, dates_all, gamounts, value_dates, value_values)
+    st.write(fig)
 
 
 

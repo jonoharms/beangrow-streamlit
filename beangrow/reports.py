@@ -472,7 +472,7 @@ def plot_flows_pyplot(flows: list[CashFlow]):
 
 def plot_flows_plotly(flows: pandas.DataFrame, log_plot: bool = True):
     df = flows.copy()
-    df['log'] = [np.log(amount) if amount > 0 else -np.log(np.abs(amount)) for amount in df['amount'] ]
+    df['log'] = [np.log10(amount) if amount > 0 else -np.log10(np.abs(amount)) for amount in df['amount'] ]
     data = 'log' if log_plot else 'amount'
 
     fig = px.bar(df, x='date', y=data, barmode='overlay', color='is_dividend', labels={
@@ -482,18 +482,18 @@ def plot_flows_plotly(flows: pandas.DataFrame, log_plot: bool = True):
                      "is_dividend": "Dividend",    
                  },hover_name='investment', hover_data={"date": True, "amount": ':.2f', "is_dividend": True})
     fig.update_traces(width=1e9)
-
+    st.write(df)
     if log_plot:
-        vals = [1e1, 5e1, 1e2, 5e2, 1e3, 5e3, 1e4, 5e4, 5e4, 1e5, 5e5, 1e5, 1e6]
-        pos_vals = [val for val in np.log(vals) if val < df['log'].max()]
-        neg_vals = [val for val in -np.log(vals) if val > df['log'].min()]
-        neg_vals.extend(pos_vals)
-        text = [np.exp(val) if val > 0 else -np.exp(np.abs(val)) for val in neg_vals]
-
-        text = [f'${val:.0f}' for val in text]
+        vals = np.array([1e1, 5e1, 1e2, 5e2, 1e3, 5e3, 1e4, 5e4, 5e4, 1e5, 5e5, 1e5, 1e6])
+        vals = np.append(np.flip(-1.0*vals),  vals )
+        vals = [val for val in vals if val < df['amount'].max()]
+        vals = [val for val in vals if val > df['amount'].min()]
+        log_vals = [np.log10(val) if val > 0 else -np.log10(np.abs(val)) for val in vals]
+        
+        text = [f'${val:.0f}' for val in vals]
         fig.update_yaxes(
             ticktext=text,
-            tickvals=neg_vals
+            tickvals=log_vals
         )
     
     return fig

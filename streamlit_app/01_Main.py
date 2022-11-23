@@ -26,6 +26,8 @@ from beancount.core import data
 import streamlit as st
 import pandas as pd
 
+import plotly.express as px
+
 st.set_page_config(layout="wide")
 
 def main():
@@ -177,11 +179,22 @@ def main():
     dates = [f.date for f in cash_flows]
     dates_all, gamounts = reports.get_amortized_value_plot_data_from_flows(price_map, cash_flows, returns.total, target_currency, dates)
     value_dates, value_values = returnslib.compute_portfolio_values(price_map, transactions, target_currency)
-    df = pd.DataFrame(index=dates_all, data=gamounts, columns= ['cumvalue'])
-    st.write(df)
-    fig = reports.plot_cumulative_flows(cash_flows, dates_all, gamounts, value_dates, value_values)
-    st.write(fig)
+    df1 = pd.DataFrame(index=dates_all, data=gamounts, columns= ['cumvalue'])
 
+
+    fig = reports.plot_cumulative_flows(cash_flows, dates_all, gamounts, value_dates, value_values)
+    df2 = pd.DataFrame(index=value_dates, data=value_values, columns= ['prices'])
+    
+    col1, col2, col3 = st.columns(3)
+    
+    df = pd.concat([df1, df2], axis=1).sort_index().astype(float)
+    col1.write(df1)
+    col2.write(df2)
+    col3.write(df)
+    st.write(fig)
+    fig = px.line(df)
+    fig.update_xaxes(range=[df1.index[0],df1.index[-1]])
+    st.plotly_chart(fig)
 
 
 if __name__ == '__main__':

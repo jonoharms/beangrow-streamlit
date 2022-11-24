@@ -49,11 +49,6 @@ def main():
         help='Configuration for accounts and reports.',
         type=Path,
     )
-    parser.add_argument(
-        'output',
-        help='Output directory to write all output files to.',
-        type=Path,
-    )
 
     parser.add_argument(
         'filter_reports',
@@ -203,12 +198,12 @@ def main():
                                    reports.get_calendar_intervals(TODAY))
     st.write(table)
 
-    table = reports.compute_returns_table(pricer, target_currency, account_data,
-                                  reports.get_cumulative_intervals(TODAY))
-    st.write(table)
+    # table = reports.compute_returns_table(pricer, target_currency, account_data,
+    #                               reports.get_cumulative_intervals(TODAY))
+    # st.write(table)
 
-    accounts_df = reports.get_accounts_table(account_data)
-    st.write(accounts_df)
+    # accounts_df = reports.get_accounts_table(account_data)
+    # st.write(accounts_df)
 
     
 

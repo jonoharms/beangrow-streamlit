@@ -75,7 +75,8 @@ def compute_irr(dated_flows: List[CashFlow],
     # Array of cash flows, converted to USD.
     usd_flows = []
     for flow in dated_flows:
-        usd_amount = pricer.convert_amount(flow.amount, target_currency, date=flow.date)
+        usd_amount = pricer.convert_amount(
+            flow.amount, target_currency, date=flow.date)
         usd_flows.append(float(usd_amount.number))
     cash_flows = np.array(usd_flows)
 
@@ -106,6 +107,7 @@ Returns = typing.NamedTuple("Returns", [
     ("flows", List[CashFlow]),
 ])
 
+
 def returns_to_dataframe(returns_list: List[Returns]) -> pandas.DataFrame:
     header = ["first_date", "last_date", "years", "total", "exdiv", "div"]
     rows = []
@@ -119,6 +121,7 @@ def returns_to_dataframe(returns_list: List[Returns]) -> pandas.DataFrame:
                      returns.exdiv,
                      returns.div))
     return pandas.DataFrame(columns=header, data=rows, index=index)
+
 
 def compute_returns(flows: List[CashFlow],
                     pricer: Pricer,
@@ -200,12 +203,13 @@ def truncate_and_merge_cash_flows(
         account_data_list: List[AccountData],
         date_start: Optional[Date],
         date_end: Optional[Date],
-        additional_cash_flows: Optional[List[CashFlow]]=None) -> List[CashFlow]:
+        additional_cash_flows: Optional[List[CashFlow]] = None) -> List[CashFlow]:
     """Truncate and merge the cash flows for given list of account data."""
     cash_flows = []
     for ad in account_data_list:
-        cash_flows.extend(truncate_cash_flows(pricer, ad, date_start, date_end, additional_cash_flows))
-        additional_cash_flows = None #Only merge these for the first one!
+        cash_flows.extend(truncate_cash_flows(
+            pricer, ad, date_start, date_end, additional_cash_flows))
+        additional_cash_flows = None  # Only merge these for the first one!
     cash_flows.sort(key=lambda item: item[0])
     return cash_flows
 
@@ -221,9 +225,10 @@ def compute_portfolio_values(price_map: prices.PriceMap,
         for posting in entry.postings:
             if posting.meta["category"] is Cat.ASSET:
                 if posting.cost:
-                    currency_pairs.add((posting.units.currency, posting.cost.currency))
+                    currency_pairs.add(
+                        (posting.units.currency, posting.cost.currency))
 
-    first = lambda x: x[0]
+    def first(x): return x[0]
     price_dates = sorted(itertools.chain(
         ((date, None)
          for pair in currency_pairs
@@ -246,7 +251,8 @@ def compute_portfolio_values(price_map: prices.PriceMap,
 
         # Convert to market value.
         value_balance = balance.reduce(convert.get_value, price_map, date)
-        cost_balance = value_balance.reduce(convert.convert_position, target_currency or "USD", price_map, date)
+        cost_balance = value_balance.reduce(
+            convert.convert_position, target_currency or "USD", price_map, date)
         pos = cost_balance.get_only_position()
         value = pos.units.number if pos else ZERO
 

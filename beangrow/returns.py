@@ -5,27 +5,20 @@
 __copyright__ = 'Copyright (C) 2020  Martin Blais'
 __license__ = 'GNU GPLv2'
 
-from typing import Optional, Tuple
 import collections
 import datetime
 import itertools
 import typing
+from typing import Optional, Tuple
 
 import numpy as np
 import pandas
+from beancount.core import convert, data, prices
+from beancount.core.inventory import Inventory
+from beancount.core.number import ZERO
 from scipy.optimize import fsolve
 
-from beancount.core import convert
-from beancount.core import data
-from beancount.core import prices
-from beancount.core.number import ZERO
-from beancount.core.inventory import Inventory
-
-from beangrow.investments import AccountData
-from beangrow.investments import CashFlow
-from beangrow.investments import Cat
-from beangrow.investments import compute_balance_at
-
+from beangrow.investments import AccountData, CashFlow, Cat, compute_balance_at
 
 # Basic type aliases.
 Account = str

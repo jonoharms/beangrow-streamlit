@@ -5,28 +5,23 @@
 __copyright__ = 'Copyright (C) 2020  Martin Blais'
 __license__ = 'GNU GPLv2'
 
-from os import path
 import argparse
-import tempfile
 import datetime
 import logging
 import os
-from typing import Tuple, Callable
+import tempfile
+from os import path
+from typing import Callable, Tuple
 
 import apache_beam as beam
-from apache_beam.options.pipeline_options import PipelineOptions
 import apache_beam.io.fileio
-
+from apache_beam.options.pipeline_options import PipelineOptions
 from beancount import loader
-from beancount.core import getters
-from beancount.core import prices
+from beancount.core import getters, prices
 
-from beangrow import investments
-from beangrow import reports
 from beangrow import config as configlib
-from beangrow import config_pb2
+from beangrow import config_pb2, investments, reports
 from beangrow import returns as returnslib
-
 
 Date = datetime.date
 

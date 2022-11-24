@@ -3,15 +3,12 @@ import datetime
 import logging
 from pathlib import Path
 
-from beancount import loader
-from beancount.core import getters
-from beancount.core import prices
-
-from beangrow import investments
-from beangrow import reports
-from beangrow import config as configlib
-
 import streamlit as st
+from beancount import loader
+from beancount.core import getters, prices
+
+from beangrow import config as configlib
+from beangrow import investments, reports
 
 
 def main():

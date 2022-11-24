@@ -6,22 +6,18 @@ __copyright__ = 'Copyright (C) 2020  Martin Blais'
 __license__ = 'GNU GPLv2'
 
 
-import datetime
 import argparse
+import datetime
 import logging
 from decimal import Decimal
 from typing import Optional, Union
 
-from dateutil import tz
 import dateutil.parser
-
 from beancount import loader
-from beancount.core import data
-from beancount.core import number
-from beancount.core import amount
+from beancount.core import amount, data, number
 from beancount.parser import printer
-
 from beanprice.sources import yahoo
+from dateutil import tz
 
 
 def main():

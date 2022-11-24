@@ -10,10 +10,6 @@ this library.
 __copyright__ = 'Copyright (C) 2020  Martin Blais'
 __license__ = 'GNU GPLv2'
 
-from os import path
-from pprint import pprint
-from typing import Optional, Tuple
-from functools import partial
 import collections
 import copy
 import datetime
@@ -23,23 +19,20 @@ import os
 import re
 import sys
 import typing
+from functools import partial
+from os import path
+from pprint import pprint
+from typing import Optional, Tuple
 
 import pandas
-
+import streamlit as st
 from beancount.core import account as accountlib
-from beancount.core import display_context
-from beancount.core import convert
-from beancount.core import data
-from beancount.core import getters
+from beancount.core import convert, data, display_context, getters
 from beancount.core.amount import Amount
 from beancount.core.inventory import Inventory
 from beancount.parser import printer
 
-from beangrow.config_pb2 import Config
-from beangrow.config_pb2 import Investment
-from beangrow.config_pb2 import InvestmentConfig
-
-import streamlit as st
+from beangrow.config_pb2 import Config, Investment, InvestmentConfig
 
 # Basic type aliases.
 Account = str

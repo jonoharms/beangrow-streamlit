@@ -9,17 +9,15 @@ __copyright__ = 'Copyright (C) 2020  Martin Blais'
 __license__ = 'GNU GPLv2'
 
 
-import datetime
 import argparse
+import datetime
 import logging
-
-from dateutil import tz
 
 from beancount import loader
 from beancount.core import data
 from beancount.parser import printer
-
 from beanprice.sources import yahoo
+from dateutil import tz
 
 
 def main():

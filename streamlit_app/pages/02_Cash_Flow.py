@@ -1,12 +1,10 @@
-from beancount.core import prices
-from beangrow import reports
-import streamlit as st
-from beangrow.returns import Pricer, Returns
-from beangrow import returns as returnslib
-from beangrow import investments
-from beangrow import reports
-from beancount.core import data
 import pandas as pd
+import streamlit as st
+from beancount.core import data, prices
+
+from beangrow import investments, reports
+from beangrow import returns as returnslib
+from beangrow.returns import Pricer, Returns
 
 
 def main():

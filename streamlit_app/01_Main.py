@@ -11,22 +11,16 @@ import datetime
 import logging
 from pathlib import Path
 
-from beancount import loader
-from beancount.core import getters
-from beancount.core import prices
-
-from beangrow import investments
-from beangrow import reports
-from beangrow import config as configlib
-
-from beangrow.returns import Pricer
-from beangrow import returns as returnslib
-from beancount.core import data
-
-import streamlit as st
 import pandas as pd
-
 import plotly.express as px
+import streamlit as st
+from beancount import loader
+from beancount.core import data, getters, prices
+
+from beangrow import config as configlib
+from beangrow import investments, reports
+from beangrow import returns as returnslib
+from beangrow.returns import Pricer
 
 st.set_page_config(layout='wide')
 

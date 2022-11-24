@@ -12,7 +12,6 @@ from google.protobuf import text_format
 
 from beangrow.config_pb2 import Config
 
-
 # Basic type aliases.
 Account = str
 

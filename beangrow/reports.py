@@ -3,28 +3,23 @@
 """
 
 import plotly.express as px
-import plotly.graph_objects as go
 import plotly.figure_factory as ff
-import streamlit as st
-from beangrow.returns import Pricer, Returns
-from beangrow import returns as returnslib
-from beangrow import investments
-from beangrow.investments import CashFlow
-from beangrow.investments import AccountData
-from beangrow.config_pb2 import Config, Group
-from beancount.core import convert
-from beancount.parser import printer
-from beancount.core.amount import Amount
-from beancount.core import prices
-from beancount.core import data
+import plotly.graph_objects as go
 import seaborn
+import streamlit as st
+from beancount.core import convert, data, prices
+from beancount.core.amount import Amount
+from beancount.parser import printer
+
+from beangrow import investments
+from beangrow import returns as returnslib
+from beangrow.config_pb2 import Config, Group
+from beangrow.investments import AccountData, CashFlow
+from beangrow.returns import Pricer, Returns
 
 __copyright__ = 'Copyright (C) 2020  Martin Blais'
 __license__ = 'GNU GPLv2'
 
-from os import path
-from typing import Any, Tuple, Optional
-from functools import partial
 import collections
 import datetime
 import io
@@ -35,13 +30,15 @@ import platform
 import subprocess
 import tempfile
 import typing
+from functools import partial
+from os import path
+from typing import Any, Optional, Tuple
 
-from dateutil.relativedelta import relativedelta
-import numpy as np
-
-import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas
+from dateutil.relativedelta import relativedelta
 from pandas.plotting import register_matplotlib_converters
 
 register_matplotlib_converters()

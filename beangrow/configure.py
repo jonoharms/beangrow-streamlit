@@ -5,25 +5,21 @@
 __copyright__ = 'Copyright (C) 2020  Martin Blais'
 __license__ = 'GNU GPLv2'
 
-from typing import Optional
 import argparse
 import collections
 import datetime
-import sys
 import logging
 import re
+import sys
+from typing import Optional
 
 from beancount import loader
 from beancount.core import account as accountlib
 from beancount.core import account_types as acctypes
-from beancount.core import data
-from beancount.core import getters
+from beancount.core import data, getters
 from beancount.parser import options
 
-from beangrow.config_pb2 import Config
-from beangrow.config_pb2 import InvestmentConfig
-from beangrow.config_pb2 import GroupConfig
-
+from beangrow.config_pb2 import Config, GroupConfig, InvestmentConfig
 
 # Basic type aliases.
 Account = str

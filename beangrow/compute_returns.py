@@ -5,19 +5,17 @@
 __copyright__ = 'Copyright (C) 2020  Martin Blais'
 __license__ = 'GNU GPLv2'
 
-from os import path
 import argparse
 import datetime
 import logging
 import os
+from os import path
 
 from beancount import loader
-from beancount.core import getters
-from beancount.core import prices
+from beancount.core import getters, prices
 
-from beangrow import investments
-from beangrow import reports
 from beangrow import config as configlib
+from beangrow import investments, reports
 
 
 def main():

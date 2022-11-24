@@ -33,6 +33,37 @@ st.set_page_config(layout="wide")
 Date = datetime.date
 TODAY = Date.today()
 
+def load(args):
+     # Load the example file.
+    logging.info('Reading ledger: %s', args.ledger)
+    entries, _, options_map = loader.load_file(args.ledger)
+    accounts = getters.get_accounts(entries)
+    dcontext = options_map['dcontext']
+
+    end_date = args.end_date or datetime.date.today()
+
+            # Load, filter and expand the configuration.
+    config = configlib.read_config(
+            args.config, args.filter_reports, accounts)
+
+
+    st.session_state.args = args
+    st.session_state.entries = entries
+    st.session_state.accounts = accounts
+    st.session_state.options_map = options_map
+    st.session_state.config = config
+    st.session_state.end_date = end_date
+
+    st.session_state.account_data_map = investments.extract(
+        entries,
+        config,
+        end_date,
+        False
+    )
+
+    st.success("Finished Reading Ledger")
+    st.text(f'Number of entries loaded: {len(entries)}')
+
 
 def main():
     """Top-level function."""
@@ -79,13 +110,6 @@ def main():
     )
 
     parser.add_argument(
-        '--pdf',
-        '--pdfs',
-        action='store_true',
-        help='Render as PDFs. Default is HTML directories.',
-    )
-
-    parser.add_argument(
         '-j',
         '--parallel',
         action='store_true',
@@ -103,44 +127,26 @@ def main():
         ),
     )
 
-    st.write("# Beangrow")
     args = parser.parse_args()
-    end_date = args.end_date or datetime.date.today()
-    if 'args' not in st.session_state:
-        st.session_state.args = args
+    st.write("# Beangrow-Streamlit")
+    st.write("Compute portfolio returns from a Beancount ledger")
+    
+    with st.expander('More Info'):
+        st.write(f'**Ledger:** {args.ledger.resolve()}')
+        st.write(f'**Config:** {args.config.resolve()}')
+    
 
+    if 'args' not in st.session_state:
+        
         if args.verbose:
             logging.basicConfig(
                 level=logging.DEBUG, format='%(levelname)-8s: %(message)s'
             )
             logging.getLogger('matplotlib.font_manager').disabled = True
 
-        # Figure out end date.
+        load(args)
 
-        # Load the example file.
-        logging.info('Reading ledger: %s', args.ledger)
-        entries, _, options_map = loader.load_file(args.ledger)
-        accounts = getters.get_accounts(entries)
-        dcontext = options_map['dcontext']
 
-        # Load, filter and expand the configuration.
-        config = configlib.read_config(
-            args.config, args.filter_reports, accounts)
-
-        st.session_state.entries = entries
-        st.session_state.accounts = accounts
-        st.session_state.options_map = options_map
-        st.session_state.config = config
-        st.session_state.end_date = end_date
-
-        st.session_state.account_data_map = investments.extract(
-            entries,
-            config,
-            end_date,
-            False
-        )
-        st.success("Finished Reading Ledger")
-        st.text(f'Number of entries loaded: {len(entries)}')
 
     report = st.sidebar.selectbox(
         'Group', st.session_state.config.groups.group, format_func=lambda x: x.name)
@@ -158,10 +164,10 @@ def main():
                 cost_currencies, ",".join([r.account for r in account_data])))
 
     cash_flows = returnslib.truncate_and_merge_cash_flows(pricer, account_data,
-                                                          None, end_date)
+                                                          None, st.session_state.end_date)
 
     returns = returnslib.compute_returns(
-        cash_flows, pricer, target_currency, end_date)
+        cash_flows, pricer, target_currency, st.session_state.end_date)
 
     transactions = data.sorted(
         [txn for ad in account_data for txn in ad.transactions])
@@ -205,12 +211,12 @@ def main():
                                           reports.get_calendar_intervals(TODAY))
     st.write(table)
 
-    # table = reports.compute_returns_table(pricer, target_currency, account_data,
-    #                               reports.get_cumulative_intervals(TODAY))
-    # st.write(table)
+    table = reports.compute_returns_table(pricer, target_currency, account_data,
+                                  reports.get_cumulative_intervals(TODAY))
+    st.write(table)
 
-    # accounts_df = reports.get_accounts_table(account_data)
-    # st.write(accounts_df)
+    accounts_df = reports.get_accounts_table(account_data)
+    st.write(accounts_df)
 
 
 if __name__ == '__main__':

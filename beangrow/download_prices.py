@@ -10,7 +10,7 @@ import datetime
 import argparse
 import logging
 from decimal import Decimal
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 from dateutil import tz
 import dateutil.parser

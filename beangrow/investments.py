@@ -12,7 +12,7 @@ __license__ = "GNU GPLv2"
 
 from os import path
 from pprint import pprint
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Optional, Tuple
 from functools import partial
 import collections
 import copy
@@ -97,16 +97,16 @@ AccountData = typing.NamedTuple("AccountData", [
     ('commodity', data.Commodity),
     ('open', data.Open),
     ('close', data.Close),
-    ("cash_flows", List[CashFlow]),
+    ("cash_flows", list[CashFlow]),
     ('transactions', data.Entries),
     ('balance', Inventory),
-    ('catmap', Dict[Account, Cat]),
+    ('catmap', dict[Account, Cat]),
 ])
 
 
 def categorize_accounts(config: InvestmentConfig,
                         investment: Investment,
-                        accounts: Set[Account]) -> Dict[Account, Cat]:
+                        accounts: set[Account]) -> dict[Account, Cat]:
     """Categorize the type of accounts encountered for a particular investment's
     transactions. Our purpose is to make the types of postings generic, so they
     can be categorized and handled generically later on.
@@ -131,7 +131,7 @@ def categorize_accounts(config: InvestmentConfig,
     return catmap
 
 
-def categorize_entry(catmap: Dict[Account, Cat],
+def categorize_entry(catmap: dict[Account, Cat],
                      entry: data.Directive) -> Tuple[Cat]:
     """Assigns metadata to each posting."""
     postings = []
@@ -171,7 +171,7 @@ def get_description(signature):
 
 
 def produce_cash_flows_general(entry: data.Directive,
-                               account: Account) -> List[CashFlow]:
+                               account: Account) -> list[CashFlow]:
     """Produce cash flows using a generalized rule."""
     has_dividend = any(posting.meta["category"] == Cat.DIVIDEND
                        for posting in entry.postings)
@@ -196,7 +196,7 @@ def produce_cash_flows_general(entry: data.Directive,
 
 
 def produce_cash_flows_explicit(entry: data.Directive,
-                                account: Account) -> List[CashFlow]:
+                                account: Account) -> list[CashFlow]:
     """Produce cash flows using explicit handlers from signatures."""
     sig = entry.meta["signature"]
     try:
@@ -210,7 +210,7 @@ def produce_cash_flows_explicit(entry: data.Directive,
 
 @register([Cat.ASSET],
           "Stock splits, and conversions at same cost basis")
-def handle_no_flows(*args) -> List[CashFlow]:
+def handle_no_flows(*args) -> list[CashFlow]:
     "Exchanges of the same asset produce no cash flows."
     return []
 
@@ -219,7 +219,7 @@ def handle_no_flows(*args) -> List[CashFlow]:
           "Asset dividend reinvested")
 @register([Cat.ASSET, Cat.DIVIDEND, Cat.EXPENSES],
           "Asset dividend reinvested")
-def handle_dividend_reinvestments(*args) -> List[CashFlow]:
+def handle_dividend_reinvestments(*args) -> list[CashFlow]:
     """Reinvested stock dividends remains internal, the money is just moved to more
     of the asset. Note that because of this, it would make it difficult to
     remove the dividend from the performance of this asset."""
@@ -228,7 +228,7 @@ def handle_dividend_reinvestments(*args) -> List[CashFlow]:
 
 @register([Cat.ASSET, Cat.EXPENSES],
           "Fee paid from liquidation")
-def handle_fee_from_liquidation(*args) -> List[CashFlow]:
+def handle_fee_from_liquidation(*args) -> list[CashFlow]:
     """Fees paid purely from sales of assets. No in or out flows, the stock value is
     simply reduced."""
     return []
@@ -240,7 +240,7 @@ def handle_fee_from_liquidation(*args) -> List[CashFlow]:
           "Cost basis adjustment")
 @register([Cat.ASSET, Cat.INCOME, Cat.EXPENSES],
           "Fee from liquidation (with P/L)")
-def handle_cost_basis_adjustments(*args) -> List[CashFlow]:
+def handle_cost_basis_adjustments(*args) -> list[CashFlow]:
     """No cash is disbursed for these adjustments, just a change in basis. This
     affects tax only. There are no associated cash flows."""
     return []
@@ -250,7 +250,7 @@ def handle_cost_basis_adjustments(*args) -> List[CashFlow]:
           "Internal expense")
 @register([Cat.OTHER],
           "Movement between internal accounts")
-def handle_cost_basis_adjustments(*args) -> List[CashFlow]:
+def handle_cost_basis_adjustments(*args) -> list[CashFlow]:
     """It's internal changes, no flows."""
     return []
 
@@ -270,7 +270,7 @@ def handle_cost_basis_adjustments(*args) -> List[CashFlow]:
 @register([Cat.ASSET, Cat.CASH, Cat.EXPENSES, Cat.INCOME, Cat.OTHER],
           "Regular purchase or sale")
 @register([Cat.ASSET, Cat.CASH, Cat.EXPENSES], "Regular purchase or sale, with expense")
-def handle_buy_sell(entry: data.Directive, account: Account) -> List[CashFlow]:
+def handle_buy_sell(entry: data.Directive, account: Account) -> list[CashFlow]:
     "In a regular purchase or sale, use the cash component for sales and purchases."
     return _handle_cash(entry, account, False)
 
@@ -281,7 +281,7 @@ def handle_buy_sell(entry: data.Directive, account: Account) -> List[CashFlow]:
           "Cash dividend")
 @register([Cat.CASH, Cat.EXPENSES, Cat.DIVIDEND],
           "Cash dividend, with expenses")
-def handle_dividends(entry: data.Directive, account: Account) -> List[CashFlow]:
+def handle_dividends(entry: data.Directive, account: Account) -> list[CashFlow]:
     "Dividends received in cash."
     return _handle_cash(entry, account, True)
 
@@ -294,13 +294,13 @@ def handle_dividends(entry: data.Directive, account: Account) -> List[CashFlow]:
           "Cash for expense or something else")
 @register([Cat.CASH, Cat.EXPENSES, Cat.INCOME],
           "Recoveries from P2P lending")
-def handle_cash_simple(entry: data.Directive, account: Account) -> List[CashFlow]:
+def handle_cash_simple(entry: data.Directive, account: Account) -> list[CashFlow]:
     "Cash for income."
     return _handle_cash(entry, account, False)
 
 
 def _handle_cash(entry: data.Directive, account: Account,
-                 is_dividend: bool) -> List[CashFlow]:
+                 is_dividend: bool) -> list[CashFlow]:
     "In a regular purchase or sale, use the cash component for sales and purchases."
     flows = []
     for posting in entry.postings:
@@ -315,7 +315,7 @@ def _handle_cash(entry: data.Directive, account: Account,
 
 @register([Cat.ASSET, Cat.OTHERASSET],
           "Exchange of assets")
-def handle_stock_exchange(entry: data.Directive, account: Account) -> List[CashFlow]:
+def handle_stock_exchange(entry: data.Directive, account: Account) -> list[CashFlow]:
     """This is for a stock exchange, similar to the issuance of GOOG from GOOGL."""
     flows = []
     for posting in entry.postings:
@@ -483,7 +483,7 @@ def write_account_file(dcontext: display_context.DisplayContext,
             st.text(epr(entry))
 
 
-def cash_flows_to_table(cash_flows: List[CashFlow]) -> pandas.DataFrame:
+def cash_flows_to_table(cash_flows: list[CashFlow]) -> pandas.DataFrame:
     """Flatten a list of cash flows to an HTML table string."""
     header = ["date", "amount", "currency",
               "is_dividend", "source", "investment"]
@@ -536,7 +536,7 @@ def write_transactions_by_type(account_data: AccountData,
 def extract(entries: data.Entries,
             config: Config,
             end_date: Date,
-            check_explicit_flows: bool) -> Dict[Account, AccountData]:
+            check_explicit_flows: bool) -> dict[Account, AccountData]:
     """Extract data from the list of entries."""
     # Note: It might be useful to have an option for "the end of its history"
     # for Ledger that aren't updated up to today.

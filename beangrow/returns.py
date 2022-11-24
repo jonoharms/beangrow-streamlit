@@ -5,7 +5,7 @@
 __copyright__ = "Copyright (C) 2020  Martin Blais"
 __license__ = "GNU GPLv2"
 
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 import collections
 import datetime
 import itertools
@@ -66,7 +66,7 @@ def net_present_value(irr: float, cash_flows: Array, years: Array) -> float:
     return np.sum(cash_flows / (np.sign(r) * (np.abs(r) ** years)))
 
 
-def compute_irr(dated_flows: List[CashFlow],
+def compute_irr(dated_flows: list[CashFlow],
                 pricer: Pricer,
                 target_currency: Currency,
                 end_date: Date) -> float:
@@ -104,11 +104,11 @@ Returns = typing.NamedTuple("Returns", [
     ("total", float),
     ("exdiv", float),
     ("div", float),
-    ("flows", List[CashFlow]),
+    ("flows", list[CashFlow]),
 ])
 
 
-def returns_to_dataframe(returns_list: List[Returns]) -> pandas.DataFrame:
+def returns_to_dataframe(returns_list: list[Returns]) -> pandas.DataFrame:
     header = ["first_date", "last_date", "years", "total", "exdiv", "div"]
     rows = []
     index = []
@@ -123,7 +123,7 @@ def returns_to_dataframe(returns_list: List[Returns]) -> pandas.DataFrame:
     return pandas.DataFrame(columns=header, data=rows, index=index)
 
 
-def compute_returns(flows: List[CashFlow],
+def compute_returns(flows: list[CashFlow],
                     pricer: Pricer,
                     target_currency: Currency,
                     end_date: Date,
@@ -151,7 +151,7 @@ def truncate_cash_flows(
         account_data: AccountData,
         date_start: Optional[Date],
         date_end: Optional[Date],
-        additional_cash_flows: Optional[List[CashFlow]]) -> List[CashFlow]:
+        additional_cash_flows: Optional[list[CashFlow]]) -> list[CashFlow]:
     """Truncate the cash flows for the given account data."""
 
     start_flows = []
@@ -200,10 +200,10 @@ def truncate_cash_flows(
 
 def truncate_and_merge_cash_flows(
         pricer: Pricer,
-        account_data_list: List[AccountData],
+        account_data_list: list[AccountData],
         date_start: Optional[Date],
         date_end: Optional[Date],
-        additional_cash_flows: Optional[List[CashFlow]] = None) -> List[CashFlow]:
+        additional_cash_flows: Optional[list[CashFlow]] = None) -> list[CashFlow]:
     """Truncate and merge the cash flows for given list of account data."""
     cash_flows = []
     for ad in account_data_list:
@@ -216,7 +216,7 @@ def truncate_and_merge_cash_flows(
 
 def compute_portfolio_values(price_map: prices.PriceMap,
                              transactions: data.Entries,
-                             target_currency: Optional[Currency] = None) -> Tuple[List[Date], List[float]]:
+                             target_currency: Optional[Currency] = None) -> Tuple[list[Date], list[float]]:
     """Compute a serie of portfolio values over time."""
 
     # Infer the list of required prices.

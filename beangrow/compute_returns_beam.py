@@ -11,7 +11,7 @@ import tempfile
 import datetime
 import logging
 import os
-from typing import List, Tuple, Callable
+from typing import Tuple, Callable
 
 import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions

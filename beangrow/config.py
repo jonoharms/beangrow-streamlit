@@ -5,7 +5,6 @@
 __copyright__ = "Copyright (C) 2020  Martin Blais"
 __license__ = "GNU GPLv2"
 
-from typing import List
 import fnmatch
 import re
 
@@ -22,7 +21,7 @@ def is_glob(pattern):
     return re.compile(r"[*?]").search(pattern)
 
 
-def expand_globs(patterns: List[str], valid_set: List[str]) -> List[str]:
+def expand_globs(patterns: list[str], valid_set: list[str]) -> list[str]:
     out_values = []
     for pattern in patterns:
         if is_glob(pattern):
@@ -33,8 +32,8 @@ def expand_globs(patterns: List[str], valid_set: List[str]) -> List[str]:
 
 
 def read_config(config_filename: str,
-                filter_reports: List[str],
-                accounts: List[Account]) -> Config:
+                filter_reports: list[str],
+                accounts: list[Account]) -> Config:
     """Read the configuration, perform globbing expansions, and whittle down the
     list of reports and investments to the requested minimal."""
 
@@ -47,8 +46,8 @@ def read_config(config_filename: str,
 
 
 def post_process_config(config: Config,
-                        filter_reports: List[str],
-                        accounts: List[Account]) -> Config:
+                        filter_reports: list[str],
+                        accounts: list[Account]) -> Config:
     """Perform globbing expansions, and whittle down the
     list of reports and investments to the requested minimal."""
 

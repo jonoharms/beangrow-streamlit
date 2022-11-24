@@ -5,7 +5,7 @@
 __copyright__ = "Copyright (C) 2020  Martin Blais"
 __license__ = "GNU GPLv2"
 
-from typing import List, Optional
+from typing import Optional
 import argparse
 import collections
 import datetime
@@ -33,7 +33,7 @@ Date = datetime.date
 
 def find_accounts(entries: data.Entries,
                   options_map: data.Options,
-                  start_date: Optional[Date]) -> List[Account]:
+                  start_date: Optional[Date]) -> list[Account]:
     """Return a list of account names from the balance sheet which either aren't
     closed or are closed now but were still open at the given start date.
     """
@@ -67,7 +67,7 @@ def infer_configuration(entries: data.Entries,
 
 
 def infer_investments_configuration(entries: data.Entries,
-                                    account_list: List[Account],
+                                    account_list: list[Account],
                                     out_config: InvestmentConfig):
     """Infer a reasonable configuration for input."""
 

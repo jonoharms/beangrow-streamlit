@@ -22,7 +22,7 @@ __copyright__ = "Copyright (C) 2020  Martin Blais"
 __license__ = "GNU GPLv2"
 
 from os import path
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Tuple, Optional
 from functools import partial
 import collections
 import datetime
@@ -61,8 +61,8 @@ CurrencyPair = Tuple[Currency, Currency]
 
 IRR_FORMAT = "{:32}: {:6.2%} ({:6.2%} ex-div, {:6.2%} div)"
 
-Table = typing.NamedTuple("Table", [("header", List[str]),
-                                    ("rows", List[List[Any]])])
+Table = typing.NamedTuple("Table", [("header", list[str]),
+                                    ("rows", list[list[Any]])])
 
 
 def render_table(table: Table,
@@ -97,8 +97,8 @@ def compute_returns_row(row: pandas.Series):
 
 def compute_returns_table(pricer: Pricer,
                           target_currency: Currency,
-                          account_data: List[AccountData],
-                          intervals: List[Interval]):
+                          account_data: list[AccountData],
+                          intervals: list[Interval]):
     """Compute a table of sequential returns, and return the raw Returns objects as well."""
     df = pandas.DataFrame(intervals, columns=[
                           'name', 'start_date', 'end_date'])
@@ -130,7 +130,7 @@ def compute_report_data(pricer,
                         account_data,
                         end_date,
                         target_currency,
-                        additional_cash_flows: Optional[List[Tuple[Date, Amount, Account]]] = None):
+                        additional_cash_flows: Optional[list[Tuple[Date, Amount, Account]]] = None):
 
     additional_cash_flows = [CashFlow(d, amt, False, "additional", ac) for (
         d, amt, ac) in (additional_cash_flows or [])]
@@ -194,7 +194,7 @@ def compute_report_data(pricer,
     )
 
 
-def get_accounts_table(account_data: List[AccountData]) -> pandas.DataFrame:
+def get_accounts_table(account_data: list[AccountData]) -> pandas.DataFrame:
     """Build of table of per-account information."""
     header = ["Investment", "Description", "Status"]
     rows = []
@@ -235,7 +235,7 @@ def set_axis(ax_, date_min, date_max):
 
 def plot_prices(output_dir: str,
                 price_map: prices.PriceMap,
-                pairs: List[CurrencyPair]) -> Dict[str, str]:
+                pairs: list[CurrencyPair]) -> dict[str, str]:
     """Render one or more plots of prices."""
 
     # Group by quote currencies.
@@ -446,7 +446,7 @@ def write_price_directives(filename: str,
         printer.print_entries(price_entries, file=prfile)
 
 
-def get_calendar_intervals(date: Date) -> List[Interval]:
+def get_calendar_intervals(date: Date) -> list[Interval]:
     """Return a list of date pairs for sequential intervals."""
     intervals = [
         (str(year), Date(year, 1, 1), Date(year + 1, 1, 1))
@@ -456,7 +456,7 @@ def get_calendar_intervals(date: Date) -> List[Interval]:
     return intervals
 
 
-def get_cumulative_intervals(date: Date) -> List[Interval]:
+def get_cumulative_intervals(date: Date) -> list[Interval]:
     """Return a list of date pairs for sequential intervals."""
     return [
         ("15_years_ago", Date(date.year - 15, 1, 1), date),
@@ -472,7 +472,7 @@ def get_cumulative_intervals(date: Date) -> List[Interval]:
     ]
 
 
-def generate_report_mapper(item: Tuple[Group, List[AccountData]],
+def generate_report_mapper(item: Tuple[Group, list[AccountData]],
                            price_map: prices.PriceMap,
                            end_date: Date) -> Tuple[str, bytes]:
     """A mapper function that can be run from Beam to produce a PDF's bytes."""
@@ -486,7 +486,7 @@ def generate_report_mapper(item: Tuple[Group, List[AccountData]],
             return (report.name, rfile.read())
 
 
-def generate_price_pages(account_data_map: Dict[Account, AccountData],
+def generate_price_pages(account_data_map: dict[Account, AccountData],
                          price_map: prices.PriceMap,
                          output_dir: str):
     """Produce renders of price time series for each currency.

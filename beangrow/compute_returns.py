@@ -58,7 +58,8 @@ def main():
 
     args = parser.parse_args()
     if args.verbose:
-        logging.basicConfig(level=logging.DEBUG, format='%(levelname)-8s: %(message)s')
+        logging.basicConfig(level=logging.DEBUG,
+                            format='%(levelname)-8s: %(message)s')
         logging.getLogger('matplotlib.font_manager').disabled = True
 
     # Figure out end date.

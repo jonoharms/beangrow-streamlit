@@ -9,6 +9,7 @@ from beangrow import reports
 from beancount.core import data
 import pandas as pd
 
+
 def main():
 
     st.write("# Cash Flow")
@@ -18,17 +19,14 @@ def main():
         return
 
     args = st.session_state.args
-    
+
     # Generate output reports.
     entries = st.session_state.entries
     account_data_map = st.session_state.account_data_map
     config = st.session_state.config
     end_date = st.session_state.end_date
 
-
-
     """Write out returns report to a directory with files in it."""
-   
 
     # TOOD(blais): Prices should be plot separately, by currency.
     # fprint("<h2>Prices</h2>")
@@ -37,8 +35,6 @@ def main():
     # for _, filename in sorted(plots.items()):
     #     fprint('<img src={} style="width: 100%"/>'.format(filename))
 
-
-   
 
 if __name__ == '__main__':
     main()

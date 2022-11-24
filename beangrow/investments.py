@@ -153,10 +153,13 @@ def compute_transaction_signature(entry: data.Directive) -> Tuple[Cat]:
 
 
 _signature_registry = {}
+
+
 def register(categories, description):
     """Registers a handler for a particular template/signature transaction."""
     def decorator(func):
-        key = "_".join(c.name for c in sorted(categories, key=lambda c: c.value))
+        key = "_".join(c.name for c in sorted(
+            categories, key=lambda c: c.value))
         _signature_registry[key] = (func, description)
         return func
     return decorator
@@ -242,6 +245,7 @@ def handle_cost_basis_adjustments(*args) -> List[CashFlow]:
     affects tax only. There are no associated cash flows."""
     return []
 
+
 @register([Cat.EXPENSES, Cat.OTHER],
           "Internal expense")
 @register([Cat.OTHER],
@@ -302,7 +306,8 @@ def _handle_cash(entry: data.Directive, account: Account,
     for posting in entry.postings:
         if posting.meta["category"] == Cat.CASH:
             assert not posting.cost
-            cf = CashFlow(entry.date, posting.units, is_dividend, "cash", account)
+            cf = CashFlow(entry.date, posting.units,
+                          is_dividend, "cash", account)
             posting.meta["flow"] = cf
             flows.append(cf)
     return flows
@@ -386,7 +391,8 @@ def process_account_entries(entries: data.Entries,
                 print("General handler:")
                 for flow in flows_general:
                     print("  ", flow)
-                raise ValueError("Differences found between general and explicit methods:")
+                raise ValueError(
+                    "Differences found between general and explicit methods:")
 
         cash_flows.extend(flows_general)
         decorated_transactions.append(entry)
@@ -414,7 +420,8 @@ def prune_entries(entries: data.Entries, config: Config) -> data.Entries:
     commodity name in at least one of its postings. This speeds up the
     recovery process by removing the majority of non-trading transactions."""
 
-    commodities = set(aconfig.currency for aconfig in config.investments.investment)
+    commodities = set(
+        aconfig.currency for aconfig in config.investments.investment)
     accounts = set()
     for aconfig in config.investments.investment:
         accounts.add(aconfig.asset_account)
@@ -449,7 +456,6 @@ def write_account_file(dcontext: display_context.DisplayContext,
                        account_data: AccountData):
     """Write out a file with details, for inspection and debugging."""
 
-
     epr = printer.EntryPrinter(dcontext=dcontext, stringify_invalid_types=True)
     col1, col2 = st.columns(2)
 
@@ -469,19 +475,18 @@ def write_account_file(dcontext: display_context.DisplayContext,
         st.write("### Cash flows\n")
         df = cash_flows_to_table(account_data.cash_flows)
         st.write(df)
-    
+
     with col2:
         st.write("### Transactions\n")
-        
+
         for entry in account_data.transactions:
             st.text(epr(entry))
 
 
-
-
 def cash_flows_to_table(cash_flows: List[CashFlow]) -> pandas.DataFrame:
     """Flatten a list of cash flows to an HTML table string."""
-    header = ["date", "amount", "currency", "is_dividend", "source", "investment"]
+    header = ["date", "amount", "currency",
+              "is_dividend", "source", "investment"]
     rows = []
     for flow in cash_flows:
         rows.append((flow.date,
@@ -505,10 +510,10 @@ def write_transactions_by_type(account_data: AccountData,
 
     # col1, ol2 = st.columns(2)
 
-    summary = {sig: [get_description(sig), len(sigentries)] for sig, sigentries in signature_map.items()}
-    df = pandas.DataFrame(index=summary.keys(), data=summary.values(), columns=['Description', 'Number of Entries'])
-    
-    
+    summary = {sig: [get_description(sig), len(sigentries)]
+               for sig, sigentries in signature_map.items()}
+    df = pandas.DataFrame(index=summary.keys(), data=summary.values(), columns=[
+                          'Description', 'Number of Entries'])
 
     st.write("## Summary")
     st.dataframe(df, use_container_width=True)
@@ -523,9 +528,10 @@ def write_transactions_by_type(account_data: AccountData,
     st.write("**Description:** {}".format(description))
     st.write("**Number of entries:** {}".format(len(sigentries)))
     epr = printer.EntryPrinter(dcontext=dcontext,
-                                stringify_invalid_types=True)
+                               stringify_invalid_types=True)
     for entry in sigentries:
         st.text(epr(entry))
+
 
 def extract(entries: data.Entries,
             config: Config,
@@ -550,6 +556,5 @@ def extract(entries: data.Entries,
                     for aconfig in config.investments.investment]
     account_data = list(filter(None, account_data))
     account_data_map = {ad.account: ad for ad in account_data}
-
 
     return account_data_map

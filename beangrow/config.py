@@ -45,7 +45,8 @@ def read_config(config_filename: str,
 
     return post_process_config(config, filter_reports, accounts)
 
-def post_process_config(config: Config, 
+
+def post_process_config(config: Config,
                         filter_reports: List[str],
                         accounts: List[Account]) -> Config:
     """Perform globbing expansions, and whittle down the
@@ -57,15 +58,18 @@ def post_process_config(config: Config,
     for investment in config.investments.investment:
         assert not is_glob(investment.asset_account)
         investment.dividend_accounts[:] = expand_globs(investment.dividend_accounts,
-                                                        accounts)
-        investment.match_accounts[:] = expand_globs(investment.match_accounts, accounts)
-        investment.cash_accounts[:] = expand_globs(investment.cash_accounts, accounts)
+                                                       accounts)
+        investment.match_accounts[:] = expand_globs(
+            investment.match_accounts, accounts)
+        investment.cash_accounts[:] = expand_globs(
+            investment.cash_accounts, accounts)
 
     # Expand investment names.
     investment_names = [investment.asset_account
                         for investment in config.investments.investment]
     for report in config.groups.group:
-        report.investment[:] = expand_globs(report.investment, investment_names)
+        report.investment[:] = expand_globs(
+            report.investment, investment_names)
 
     # Filter down reports.
     if filter_reports:

@@ -30,7 +30,8 @@ def main():
     parser.add_argument('-v', '--verbose', action='store_true')
     args = parser.parse_args()
     if args.verbose:
-        logging.basicConfig(level=logging.DEBUG, format='%(levelname)-8s: %(message)s')
+        logging.basicConfig(level=logging.DEBUG,
+                            format='%(levelname)-8s: %(message)s')
 
     # Load the example file.
     logging.info("Reading ledger: %s", args.price_ledger)

@@ -69,7 +69,8 @@ def main():
 
     args, pipeline_args = parser.parse_known_args()
     if args.verbose:
-        logging.basicConfig(level=logging.DEBUG, format='%(levelname)-8s: %(message)s')
+        logging.basicConfig(level=logging.DEBUG,
+                            format='%(levelname)-8s: %(message)s')
         logging.getLogger('matplotlib.font_manager').disabled = True
 
     # Figure out end date.
@@ -105,7 +106,8 @@ def main():
         for report in config.groups.group:
             adlist = [account_data_map[name] for name in report.investment]
             assert isinstance(adlist, list)
-            assert all(isinstance(ad, investments.AccountData) for ad in adlist)
+            assert all(isinstance(ad, investments.AccountData)
+                       for ad in adlist)
             report_adlist.append((report, adlist))
 
         _ = (pipeline

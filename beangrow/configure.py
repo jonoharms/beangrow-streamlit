@@ -95,12 +95,12 @@ def infer_investments_configuration(entries: data.Entries,
                 for posting in entry.postings:
                     if (posting.account == aconfig.asset_account or
                         posting.account in aconfig.dividend_accounts or
-                        posting.account in aconfig.match_accounts):
+                            posting.account in aconfig.match_accounts):
                         continue
                     if (re.search(r":(Cash|Checking|Receivable|GSURefund)$",
                                   posting.account) or
                         re.search(r"Receivable|Payable", posting.account) or
-                        re.match(r"Income:.*:(Match401k)$", posting.account)):
+                            re.match(r"Income:.*:(Match401k)$", posting.account)):
                         cash_accounts.add(posting.account)
         aconfig.cash_accounts.extend(cash_accounts)
 
@@ -115,7 +115,8 @@ def infer_report_groups(entries: data.Entries,
     open_close_map = getters.get_account_open_close(entries)
     for investment in investments.investment:
         opn, unused_cls = open_close_map[investment.asset_account]
-        assert opn, "Missing open directive for '{}'".format(investment.account)
+        assert opn, "Missing open directive for '{}'".format(
+            investment.account)
         name = "currency.{}".format(investment.currency)
         groups[name].append(investment.asset_account)
 
@@ -155,7 +156,8 @@ def main():
 
     args = parser.parse_args()
     if args.verbose:
-        logging.basicConfig(level=logging.DEBUG, format='%(levelname)-8s: %(message)s')
+        logging.basicConfig(level=logging.DEBUG,
+                            format='%(levelname)-8s: %(message)s')
         logging.getLogger('matplotlib.font_manager').disabled = True
 
     # Load the example file.

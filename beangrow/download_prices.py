@@ -44,7 +44,8 @@ def main():
     # Get the data.
     source = yahoo.Source()
     sprices = source.get_daily_prices(args.instrument,
-                                      datetime.datetime.combine(args.start, datetime.time()),
+                                      datetime.datetime.combine(
+                                          args.start, datetime.time()),
                                       datetime.datetime.combine(args.end, datetime.time()))
     if sprices is None:
         raise RuntimeError("Could not fetch from {}".format(source))

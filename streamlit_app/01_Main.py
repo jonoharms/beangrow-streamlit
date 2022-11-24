@@ -5,7 +5,6 @@
 __copyright__ = 'Copyright (C) 2020  Martin Blais'
 __license__ = 'GNU GPLv2'
 
-
 import argparse
 import datetime
 import logging
@@ -18,41 +17,15 @@ from beancount import loader
 from beancount.core import data, getters, prices
 
 from beangrow import config as configlib
-from beangrow import investments, reports
+from beangrow import investments, reports, streamlit_helpers
 from beangrow import returns as returnslib
 from beangrow.returns import Pricer
+
 
 st.set_page_config(layout='wide')
 
 Date = datetime.date
 TODAY = Date.today()
-
-
-def load(args):
-    # Load the example file.
-    logging.info('Reading ledger: %s', args.ledger)
-    entries, _, options_map = loader.load_file(args.ledger)
-    accounts = getters.get_accounts(entries)
-    dcontext = options_map['dcontext']
-
-    end_date = args.end_date or datetime.date.today()
-
-    # Load, filter and expand the configuration.
-    config = configlib.read_config(args.config, args.filter_reports, accounts)
-
-    st.session_state.args = args
-    st.session_state.entries = entries
-    st.session_state.accounts = accounts
-    st.session_state.options_map = options_map
-    st.session_state.config = config
-    st.session_state.end_date = end_date
-
-    st.session_state.account_data_map = investments.extract(
-        entries, config, end_date, False
-    )
-
-    st.success('Finished Reading Ledger')
-    st.text(f'Number of entries loaded: {len(entries)}')
 
 
 def main():
@@ -133,98 +106,27 @@ def main():
             )
             logging.getLogger('matplotlib.font_manager').disabled = True
 
-        load(args)
+        streamlit_helpers.load_ledger(args)
 
-    report = st.sidebar.selectbox(
-        'Group',
-        st.session_state.config.groups.group,
-        format_func=lambda x: x.name,
-    )
-    price_map = prices.build_price_map(st.session_state.entries)
-    pricer = Pricer(price_map)
-    account_data = [
-        st.session_state.account_data_map[name] for name in report.investment
-    ]
+    report = streamlit_helpers.select_report()
+    if 'cash_flows' not in st.session_state:
+        streamlit_helpers.load_report(report)
+    # fig = reports.plot_cumulative_flows(
+    #     cash_flows, dates_all, gamounts, value_dates, value_values
+    # )
+    # st.write(fig)
 
-    target_currency = report.currency
-    if not target_currency:
-        cost_currencies = set(r.cost_currency for r in account_data)
-        target_currency = cost_currencies.pop()
-        assert (
-            not cost_currencies
-        ), 'Incompatible cost currencies {} for accounts {}'.format(
-            cost_currencies, ','.join([r.account for r in account_data])
-        )
-
-    cash_flows = returnslib.truncate_and_merge_cash_flows(
-        pricer, account_data, None, st.session_state.end_date
-    )
-
-    returns = returnslib.compute_returns(
-        cash_flows, pricer, target_currency, st.session_state.end_date
-    )
-
-    transactions = data.sorted(
-        [txn for ad in account_data for txn in ad.transactions]
-    )
-
-    # Render cash flows.
-    show_pyplot = st.sidebar.checkbox('Show pyplot plot', False)
-    if show_pyplot:
-        fig = reports.plot_flows_pyplot(cash_flows)
-        st.write(fig)
-
-    log_plot = st.sidebar.checkbox('Log Plot', True)
-    df = investments.cash_flows_to_table(cash_flows)
-    fig = reports.plot_flows_plotly(df, log_plot)
-    st.plotly_chart(fig)
-    st.write(df)
-
-    dates = [f.date for f in cash_flows]
-    dates_all, gamounts = reports.get_amortized_value_plot_data_from_flows(
-        price_map, cash_flows, returns.total, target_currency, dates
-    )
-    value_dates, value_values = returnslib.compute_portfolio_values(
-        price_map, transactions, target_currency
-    )
-    df1 = pd.DataFrame(index=dates_all, data=gamounts, columns=['cumvalue'])
-
-    fig = reports.plot_cumulative_flows(
-        cash_flows, dates_all, gamounts, value_dates, value_values
-    )
-    df2 = pd.DataFrame(
-        index=value_dates, data=value_values, columns=['prices']
-    )
-    df = pd.concat([df1, df2], axis=1).sort_index().astype(float)
-
-    st.write(fig)
-    fig = px.line(df)
-    fig.update_xaxes(range=[df1.index[0], df1.index[-1]])
+    fig = px.line(st.session_state.values_df)
+    # fig.update_xaxes(range=[df1.index[0], df1.index[-1]])
     fig.update_layout(hovermode='x unified')
     st.plotly_chart(fig)
 
-    st.write(returns.total)
-    st.write(returns.exdiv)
-    st.write(returns.div)
-
-    table = reports.compute_returns_table(
-        pricer,
-        target_currency,
-        account_data,
-        reports.get_calendar_intervals(TODAY),
-    )
-    st.write(table)
-
-    table = reports.compute_returns_table(
-        pricer,
-        target_currency,
-        account_data,
-        reports.get_cumulative_intervals(TODAY),
-    )
-    st.write(table)
-
-    accounts_df = reports.get_accounts_table(account_data)
-    st.write(accounts_df)
+    st.write(st.session_state.returns.total)
+    st.write(st.session_state.returns.exdiv)
+    st.write(st.session_state.returns.div)
+    st.write(st.session_state.calendar_returns)
+    st.write(st.session_state.cumulative_returns)
+    st.write(st.session_state.accounts_df)
 
 
 if __name__ == '__main__':

@@ -2,8 +2,8 @@
 """Library code to compute returns from series of cash flows.
 """
 
-__copyright__ = "Copyright (C) 2020  Martin Blais"
-__license__ = "GNU GPLv2"
+__copyright__ = 'Copyright (C) 2020  Martin Blais'
+__license__ = 'GNU GPLv2'
 
 from typing import Optional, Tuple
 import collections
@@ -49,34 +49,40 @@ class Pricer:
         # Add prices found to the list of queried ones.
         for found_date, found_rate in price_dates:
             self.required_prices[(pos.units.currency, date)].add(
-                (price.currency, found_date, found_rate))
+                (price.currency, found_date, found_rate)
+            )
 
         return price
 
     def convert_amount(self, amount, target_currency, date):
         """Convert an amount to a specific currency."""
         # TODO(blais): Save the amount here too.
-        return convert.convert_amount(amount, target_currency, self.price_map, date=date)
+        return convert.convert_amount(
+            amount, target_currency, self.price_map, date=date
+        )
 
 
 def net_present_value(irr: float, cash_flows: Array, years: Array) -> float:
     """Net present value; objective function for optimizer."""
     # Note: We handle negative roots as per https://github.com/beancount/beangrow/issues/4.
-    r = 1. + irr
+    r = 1.0 + irr
     return np.sum(cash_flows / (np.sign(r) * (np.abs(r) ** years)))
 
 
-def compute_irr(dated_flows: list[CashFlow],
-                pricer: Pricer,
-                target_currency: Currency,
-                end_date: Date) -> float:
+def compute_irr(
+    dated_flows: list[CashFlow],
+    pricer: Pricer,
+    target_currency: Currency,
+    end_date: Date,
+) -> float:
     """Compute the irregularly spaced IRR."""
 
     # Array of cash flows, converted to USD.
     usd_flows = []
     for flow in dated_flows:
         usd_amount = pricer.convert_amount(
-            flow.amount, target_currency, date=flow.date)
+            flow.amount, target_currency, date=flow.date
+        )
         usd_flows.append(float(usd_amount.number))
     cash_flows = np.array(usd_flows)
 
@@ -91,46 +97,60 @@ def compute_irr(dated_flows: list[CashFlow],
 
     # Solve for the root of the NPV equation.
     irr, unused_infodict, unused_ier, unused_mesg = fsolve(
-        net_present_value, x0=estimated_irr, args=(cash_flows, years),
-        full_output=True)
+        net_present_value,
+        x0=estimated_irr,
+        args=(cash_flows, years),
+        full_output=True,
+    )
     return irr.item()
 
 
-Returns = typing.NamedTuple("Returns", [
-    ('groupname', str),
-    ('first_date', Date),
-    ('last_date', Date),
-    ('years', float),
-    ("total", float),
-    ("exdiv", float),
-    ("div", float),
-    ("flows", list[CashFlow]),
-])
+Returns = typing.NamedTuple(
+    'Returns',
+    [
+        ('groupname', str),
+        ('first_date', Date),
+        ('last_date', Date),
+        ('years', float),
+        ('total', float),
+        ('exdiv', float),
+        ('div', float),
+        ('flows', list[CashFlow]),
+    ],
+)
 
 
 def returns_to_dataframe(returns_list: list[Returns]) -> pandas.DataFrame:
-    header = ["first_date", "last_date", "years", "total", "exdiv", "div"]
+    header = ['first_date', 'last_date', 'years', 'total', 'exdiv', 'div']
     rows = []
     index = []
     for returns in returns_list:
         index.append(returns.groupname)
-        rows.append((returns.first_date,
-                     returns.last_date,
-                     returns.years,
-                     returns.total,
-                     returns.exdiv,
-                     returns.div))
+        rows.append(
+            (
+                returns.first_date,
+                returns.last_date,
+                returns.years,
+                returns.total,
+                returns.exdiv,
+                returns.div,
+            )
+        )
     return pandas.DataFrame(columns=header, data=rows, index=index)
 
 
-def compute_returns(flows: list[CashFlow],
-                    pricer: Pricer,
-                    target_currency: Currency,
-                    end_date: Date,
-                    groupname: Optional[str] = None) -> Returns:
+def compute_returns(
+    flows: list[CashFlow],
+    pricer: Pricer,
+    target_currency: Currency,
+    end_date: Date,
+    groupname: Optional[str] = None,
+) -> Returns:
     """Compute the returns from a list of cash flows."""
     if not flows:
-        return Returns(groupname or "?", Date.today(), Date.today(), 0, 0, 0, 0, [])
+        return Returns(
+            groupname or '?', Date.today(), Date.today(), 0, 0, 0, 0, []
+        )
 
     flows = sorted(flows, key=lambda cf: cf.date)
     irr = compute_irr(flows, pricer, target_currency, end_date)
@@ -141,17 +161,25 @@ def compute_returns(flows: list[CashFlow],
     first_date = flows[0].date
     last_date = flows[-1].date
     years = (last_date - first_date).days / 365
-    return Returns(groupname or "?", first_date, last_date, years,
-                   irr, irr_exdiv, (irr - irr_exdiv),
-                   flows)
+    return Returns(
+        groupname or '?',
+        first_date,
+        last_date,
+        years,
+        irr,
+        irr_exdiv,
+        (irr - irr_exdiv),
+        flows,
+    )
 
 
 def truncate_cash_flows(
-        pricer: Pricer,
-        account_data: AccountData,
-        date_start: Optional[Date],
-        date_end: Optional[Date],
-        additional_cash_flows: Optional[list[CashFlow]]) -> list[CashFlow]:
+    pricer: Pricer,
+    account_data: AccountData,
+    date_start: Optional[Date],
+    date_end: Optional[Date],
+    additional_cash_flows: Optional[list[CashFlow]],
+) -> list[CashFlow]:
     """Truncate the cash flows for the given account data."""
 
     start_flows = []
@@ -165,8 +193,14 @@ def truncate_cash_flows(
             cost_position = cost_balance.get_only_position()
             if cost_position:
                 start_flows.append(
-                    CashFlow(date_start, -cost_position.units, False,
-                             "simulated-open", account_data.account))
+                    CashFlow(
+                        date_start,
+                        -cost_position.units,
+                        False,
+                        'simulated-open',
+                        account_data.account,
+                    )
+                )
 
     if date_end is not None:
         # Truncate after the end date.
@@ -178,12 +212,18 @@ def truncate_cash_flows(
             cost_position = cost_balance.get_only_position()
             if cost_position:
                 end_flows.append(
-                    CashFlow(date_end, cost_position.units, False,
-                             "simulated-close", account_data.account))
+                    CashFlow(
+                        date_end,
+                        cost_position.units,
+                        False,
+                        'simulated-close',
+                        account_data.account,
+                    )
+                )
 
     # Compute truncated flows.
     truncated_flows = []
-    for flow in account_data.cash_flows+(additional_cash_flows or []):
+    for flow in account_data.cash_flows + (additional_cash_flows or []):
         if date_start and flow.date < date_start:
             continue
         if date_end and flow.date >= date_end:
@@ -199,42 +239,56 @@ def truncate_cash_flows(
 
 
 def truncate_and_merge_cash_flows(
-        pricer: Pricer,
-        account_data_list: list[AccountData],
-        date_start: Optional[Date],
-        date_end: Optional[Date],
-        additional_cash_flows: Optional[list[CashFlow]] = None) -> list[CashFlow]:
+    pricer: Pricer,
+    account_data_list: list[AccountData],
+    date_start: Optional[Date],
+    date_end: Optional[Date],
+    additional_cash_flows: Optional[list[CashFlow]] = None,
+) -> list[CashFlow]:
     """Truncate and merge the cash flows for given list of account data."""
     cash_flows = []
     for ad in account_data_list:
-        cash_flows.extend(truncate_cash_flows(
-            pricer, ad, date_start, date_end, additional_cash_flows))
+        cash_flows.extend(
+            truncate_cash_flows(
+                pricer, ad, date_start, date_end, additional_cash_flows
+            )
+        )
         additional_cash_flows = None  # Only merge these for the first one!
     cash_flows.sort(key=lambda item: item[0])
     return cash_flows
 
 
-def compute_portfolio_values(price_map: prices.PriceMap,
-                             transactions: data.Entries,
-                             target_currency: Optional[Currency] = None) -> Tuple[list[Date], list[float]]:
+def compute_portfolio_values(
+    price_map: prices.PriceMap,
+    transactions: data.Entries,
+    target_currency: Optional[Currency] = None,
+) -> Tuple[list[Date], list[float]]:
     """Compute a serie of portfolio values over time."""
 
     # Infer the list of required prices.
     currency_pairs = set()
     for entry in transactions:
         for posting in entry.postings:
-            if posting.meta["category"] is Cat.ASSET:
+            if posting.meta['category'] is Cat.ASSET:
                 if posting.cost:
                     currency_pairs.add(
-                        (posting.units.currency, posting.cost.currency))
+                        (posting.units.currency, posting.cost.currency)
+                    )
 
-    def first(x): return x[0]
-    price_dates = sorted(itertools.chain(
-        ((date, None)
-         for pair in currency_pairs
-         for date, _ in prices.get_all_prices(price_map, pair)),
-        ((entry.date, entry)
-         for entry in transactions)), key=first)
+    def first(x):
+        return x[0]
+
+    price_dates = sorted(
+        itertools.chain(
+            (
+                (date, None)
+                for pair in currency_pairs
+                for date, _ in prices.get_all_prices(price_map, pair)
+            ),
+            ((entry.date, entry) for entry in transactions),
+        ),
+        key=first,
+    )
 
     # Iterate computing the balance.
     value_dates = []
@@ -246,13 +300,14 @@ def compute_portfolio_values(price_map: prices.PriceMap,
             if entry is None:
                 continue
             for posting in entry.postings:
-                if posting.meta["category"] is Cat.ASSET:
+                if posting.meta['category'] is Cat.ASSET:
                     balance.add_position(posting)
 
         # Convert to market value.
         value_balance = balance.reduce(convert.get_value, price_map, date)
         cost_balance = value_balance.reduce(
-            convert.convert_position, target_currency or "USD", price_map, date)
+            convert.convert_position, target_currency or 'USD', price_map, date
+        )
         pos = cost_balance.get_only_position()
         value = pos.units.number if pos else ZERO
 

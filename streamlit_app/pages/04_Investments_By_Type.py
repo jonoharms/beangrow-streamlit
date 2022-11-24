@@ -15,7 +15,7 @@ import streamlit as st
 
 
 def main():
-    st.write("# Investments by Type")
+    st.write('# Investments by Type')
 
     if 'args' not in st.session_state:
         st.write('### Run Main Page First')

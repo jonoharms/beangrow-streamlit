@@ -1,4 +1,3 @@
-
 from beancount.core import prices
 from beangrow import reports
 import streamlit as st
@@ -12,7 +11,7 @@ import pandas as pd
 
 def main():
 
-    st.write("# Cash Flow")
+    st.write('# Cash Flow')
 
     if 'args' not in st.session_state:
         st.write('### Run Main Page First')

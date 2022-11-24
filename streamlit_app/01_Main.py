@@ -28,13 +28,14 @@ import pandas as pd
 
 import plotly.express as px
 
-st.set_page_config(layout="wide")
+st.set_page_config(layout='wide')
 
 Date = datetime.date
 TODAY = Date.today()
 
+
 def load(args):
-     # Load the example file.
+    # Load the example file.
     logging.info('Reading ledger: %s', args.ledger)
     entries, _, options_map = loader.load_file(args.ledger)
     accounts = getters.get_accounts(entries)
@@ -42,10 +43,8 @@ def load(args):
 
     end_date = args.end_date or datetime.date.today()
 
-            # Load, filter and expand the configuration.
-    config = configlib.read_config(
-            args.config, args.filter_reports, accounts)
-
+    # Load, filter and expand the configuration.
+    config = configlib.read_config(args.config, args.filter_reports, accounts)
 
     st.session_state.args = args
     st.session_state.entries = entries
@@ -55,13 +54,10 @@ def load(args):
     st.session_state.end_date = end_date
 
     st.session_state.account_data_map = investments.extract(
-        entries,
-        config,
-        end_date,
-        False
+        entries, config, end_date, False
     )
 
-    st.success("Finished Reading Ledger")
+    st.success('Finished Reading Ledger')
     st.text(f'Number of entries loaded: {len(entries)}')
 
 
@@ -128,16 +124,15 @@ def main():
     )
 
     args = parser.parse_args()
-    st.write("# Beangrow-Streamlit")
-    st.write("Compute portfolio returns from a Beancount ledger")
-    
+    st.write('# Beangrow-Streamlit')
+    st.write('Compute portfolio returns from a Beancount ledger')
+
     with st.expander('More Info'):
         st.write(f'**Ledger:** {args.ledger.resolve()}')
         st.write(f'**Config:** {args.config.resolve()}')
-    
 
     if 'args' not in st.session_state:
-        
+
         if args.verbose:
             logging.basicConfig(
                 level=logging.DEBUG, format='%(levelname)-8s: %(message)s'
@@ -146,31 +141,38 @@ def main():
 
         load(args)
 
-
-
     report = st.sidebar.selectbox(
-        'Group', st.session_state.config.groups.group, format_func=lambda x: x.name)
+        'Group',
+        st.session_state.config.groups.group,
+        format_func=lambda x: x.name,
+    )
     price_map = prices.build_price_map(st.session_state.entries)
     pricer = Pricer(price_map)
-    account_data = [st.session_state.account_data_map[name]
-                    for name in report.investment]
+    account_data = [
+        st.session_state.account_data_map[name] for name in report.investment
+    ]
 
     target_currency = report.currency
     if not target_currency:
         cost_currencies = set(r.cost_currency for r in account_data)
         target_currency = cost_currencies.pop()
-        assert not cost_currencies, (
-            "Incompatible cost currencies {} for accounts {}".format(
-                cost_currencies, ",".join([r.account for r in account_data])))
+        assert (
+            not cost_currencies
+        ), 'Incompatible cost currencies {} for accounts {}'.format(
+            cost_currencies, ','.join([r.account for r in account_data])
+        )
 
-    cash_flows = returnslib.truncate_and_merge_cash_flows(pricer, account_data,
-                                                          None, st.session_state.end_date)
+    cash_flows = returnslib.truncate_and_merge_cash_flows(
+        pricer, account_data, None, st.session_state.end_date
+    )
 
     returns = returnslib.compute_returns(
-        cash_flows, pricer, target_currency, st.session_state.end_date)
+        cash_flows, pricer, target_currency, st.session_state.end_date
+    )
 
     transactions = data.sorted(
-        [txn for ad in account_data for txn in ad.transactions])
+        [txn for ad in account_data for txn in ad.transactions]
+    )
 
     # Render cash flows.
     show_pyplot = st.sidebar.checkbox('Show pyplot plot', False)
@@ -186,15 +188,19 @@ def main():
 
     dates = [f.date for f in cash_flows]
     dates_all, gamounts = reports.get_amortized_value_plot_data_from_flows(
-        price_map, cash_flows, returns.total, target_currency, dates)
+        price_map, cash_flows, returns.total, target_currency, dates
+    )
     value_dates, value_values = returnslib.compute_portfolio_values(
-        price_map, transactions, target_currency)
+        price_map, transactions, target_currency
+    )
     df1 = pd.DataFrame(index=dates_all, data=gamounts, columns=['cumvalue'])
 
     fig = reports.plot_cumulative_flows(
-        cash_flows, dates_all, gamounts, value_dates, value_values)
-    df2 = pd.DataFrame(index=value_dates, data=value_values,
-                       columns=['prices'])
+        cash_flows, dates_all, gamounts, value_dates, value_values
+    )
+    df2 = pd.DataFrame(
+        index=value_dates, data=value_values, columns=['prices']
+    )
     df = pd.concat([df1, df2], axis=1).sort_index().astype(float)
 
     st.write(fig)
@@ -207,12 +213,20 @@ def main():
     st.write(returns.exdiv)
     st.write(returns.div)
 
-    table = reports.compute_returns_table(pricer, target_currency, account_data,
-                                          reports.get_calendar_intervals(TODAY))
+    table = reports.compute_returns_table(
+        pricer,
+        target_currency,
+        account_data,
+        reports.get_calendar_intervals(TODAY),
+    )
     st.write(table)
 
-    table = reports.compute_returns_table(pricer, target_currency, account_data,
-                                  reports.get_cumulative_intervals(TODAY))
+    table = reports.compute_returns_table(
+        pricer,
+        target_currency,
+        account_data,
+        reports.get_cumulative_intervals(TODAY),
+    )
     st.write(table)
 
     accounts_df = reports.get_accounts_table(account_data)

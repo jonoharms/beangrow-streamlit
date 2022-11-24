@@ -25,7 +25,8 @@ def main():
     dcontext = st.session_state.options_map['dcontext']
 
     account = st.sidebar.selectbox(
-        'Select Account', [ad.account for ad in account_data_map.values()])
+        'Select Account', [ad.account for ad in account_data_map.values()]
+    )
     ad = account_data_map[account]
     investments.write_account_file(dcontext, ad)
 

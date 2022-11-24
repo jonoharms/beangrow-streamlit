@@ -30,6 +30,9 @@ import plotly.express as px
 
 st.set_page_config(layout="wide")
 
+Date = datetime.date
+TODAY = Date.today()
+
 def main():
     """Top-level function."""
     parser = argparse.ArgumentParser()
@@ -183,19 +186,31 @@ def main():
 
 
     fig = reports.plot_cumulative_flows(cash_flows, dates_all, gamounts, value_dates, value_values)
-    df2 = pd.DataFrame(index=value_dates, data=value_values, columns= ['prices'])
-    
-    col1, col2, col3 = st.columns(3)
-    
+    df2 = pd.DataFrame(index=value_dates, data=value_values, columns= ['prices'])   
     df = pd.concat([df1, df2], axis=1).sort_index().astype(float)
-    col1.write(df1)
-    col2.write(df2)
-    col3.write(df)
+
     st.write(fig)
     fig = px.line(df)
     fig.update_xaxes(range=[df1.index[0],df1.index[-1]])
+    fig.update_layout(hovermode='x unified')
     st.plotly_chart(fig)
 
+    st.write(returns.total)
+    st.write(returns.exdiv)
+    st.write(returns.div)
+
+    table = reports.compute_returns_table(pricer, target_currency, account_data,
+                                   reports.get_calendar_intervals(TODAY))
+    st.write(table)
+
+    table = reports.compute_returns_table(pricer, target_currency, account_data,
+                                  reports.get_cumulative_intervals(TODAY))
+    st.write(table)
+
+    accounts_df = reports.get_accounts_table(account_data)
+    st.write(accounts_df)
+
+    
 
 if __name__ == '__main__':
     main()

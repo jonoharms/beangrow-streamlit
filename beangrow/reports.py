@@ -132,32 +132,31 @@ def render_table(table: Table,
 # A named date interval: (name, start date, end date).
 Interval = Tuple[str, Date, Date]
 
-
-def _compute_returns_with_table(pricer: Pricer,
-                          target_currency: Currency,
-                          account_data: List[AccountData],
-                          intervals: List[Interval]):
-    """Compute a table of sequential returns, and return the raw Returns objects as well."""
-    header = ["Return"]
-    rows = [["Total"], ["Ex-div"], ["Div"]]
-    returns_list = []
-    for intname, date1, date2 in intervals:
-        header.append(intname)
-        cash_flows = returnslib.truncate_and_merge_cash_flows(pricer, account_data,
-                                                              date1, date2)
-        returns = returnslib.compute_returns(cash_flows, pricer, target_currency, date2, groupname=intname)
-        returns_list.append(returns)
-        rows[0].append(returns.total)
-        rows[1].append(returns.exdiv)
-        rows[2].append(returns.div)
-    return Table(header, rows), returns_list
+def compute_returns_row(row: pandas.Series):
+    return 
 
 def compute_returns_table(pricer: Pricer,
                           target_currency: Currency,
                           account_data: List[AccountData],
                           intervals: List[Interval]):
-    """Compute a table of sequential returns."""
-    return _compute_returns_with_table(pricer, target_currency, account_data, intervals)[0]
+    """Compute a table of sequential returns, and return the raw Returns objects as well."""
+
+    returns_list = []
+    df = pandas.DataFrame(intervals, columns=['name', 'start_date', 'end_date'])
+    df = df.set_index('name')
+
+    for row in df.itertuples():
+        cash_flows = returnslib.truncate_and_merge_cash_flows(pricer, account_data,
+                                                              row.start_date, row.end_date)
+        returns = returnslib.compute_returns(cash_flows, pricer, target_currency, row.end_date, groupname=row.Index)
+        df.at[row.Index, 'returns'] = returns
+        df.at[row.Index, 'total'] = returns.total
+        df.at[row.Index, 'exdiv'] = returns.exdiv
+        df.at[row.Index, 'div'] = returns.div
+
+    return df
+
+
 
 
 def write_returns_st(
@@ -482,7 +481,7 @@ def plot_flows_plotly(flows: pandas.DataFrame, log_plot: bool = True):
                      "is_dividend": "Dividend",    
                  },hover_name='investment', hover_data={"date": True, "amount": ':.2f', "is_dividend": True})
     fig.update_traces(width=1e9)
-    st.write(df)
+
     if log_plot:
         vals = np.array([1e1, 5e1, 1e2, 5e2, 1e3, 5e3, 1e4, 5e4, 5e4, 1e5, 5e5, 1e5, 1e6])
         vals = np.append(np.flip(-1.0*vals),  vals )
@@ -651,11 +650,11 @@ def generate_reports(account_data_map: Dict[Account, AccountData],
     #     end_date,
     #     report.currency))
 
-    # calls.append(partial(
-    #     write_returns_debugfile, "{}.org".format(basename),
-    #     pricer, adlist, report.name,
-    #     end_date,
-    #     report.currency))
+    calls.append(partial(
+        write_returns_debugfile, "{}.org".format(basename),
+        pricer, adlist, report.name,
+        end_date,
+        report.currency))
 
     # if parallel:
     #     with multiprocessing.Pool(5) as pool:

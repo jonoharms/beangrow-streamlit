@@ -112,6 +112,7 @@ def load_report(report):
         index=value_dates, data=value_values, columns=['prices']
     )
     values_df = pd.concat([df1, df2], axis=1).sort_index().astype(float)
+    values_df = values_df[values_df['cumvalue'].notna()]
 
     calendar_returns = reports.compute_returns_table(
         st.session_state.pricer,

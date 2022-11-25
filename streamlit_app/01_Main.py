@@ -20,7 +20,7 @@ from beangrow import config as configlib
 from beangrow import investments, reports, streamlit_helpers
 from beangrow import returns as returnslib
 from beangrow.returns import Pricer
-
+from streamlit_extras.dataframe_explorer import dataframe_explorer
 
 st.set_page_config(layout='wide')
 
@@ -94,9 +94,7 @@ def main():
     st.write('# Beangrow-Streamlit')
     st.write('Compute portfolio returns from a Beancount ledger')
 
-    with st.expander('More Info'):
-        st.write(f'**Ledger:** {args.ledger.resolve()}')
-        st.write(f'**Config:** {args.config.resolve()}')
+
 
     if 'args' not in st.session_state:
 
@@ -111,22 +109,37 @@ def main():
     report = streamlit_helpers.select_report()
     if 'cash_flows' not in st.session_state:
         streamlit_helpers.load_report(report)
-    # fig = reports.plot_cumulative_flows(
-    #     cash_flows, dates_all, gamounts, value_dates, value_values
-    # )
-    # st.write(fig)
 
     fig = px.line(st.session_state.values_df)
-    # fig.update_xaxes(range=[df1.index[0], df1.index[-1]])
     fig.update_layout(hovermode='x unified')
     st.plotly_chart(fig)
+    
+
 
     st.write(st.session_state.returns.total)
     st.write(st.session_state.returns.exdiv)
     st.write(st.session_state.returns.div)
     st.write(st.session_state.calendar_returns)
     st.write(st.session_state.cumulative_returns)
-    st.write(st.session_state.accounts_df)
+
+
+    with st.expander('More Info'):
+        st.write(f'**Ledger:** {args.ledger.resolve()}')
+        st.write(f'**Config:** {args.config.resolve()}')
+        tab0, tab1 = st.tabs(['Values DF', 'Accounts DF'])
+
+        with tab0:
+            st.write('### Value DF')
+            tmp_df = dataframe_explorer(st.session_state.values_df)
+            st.write(tmp_df)
+
+        with tab1:
+            st.write("### Accounts")
+            tmp_df1 = dataframe_explorer(st.session_state.accounts_df)
+            st.write(tmp_df1)
+
+
+    
 
 
 if __name__ == '__main__':

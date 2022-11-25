@@ -113,7 +113,7 @@ def main():
     fig = px.line(st.session_state.values_df)
     fig.update_layout(hovermode='x unified')
     fig.update_layout(height=600)
-    st.plotly_chart(fig, theme='streamlit', use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)
     
     columns = st.columns([1, 1, 3])
     rets = [st.session_state.returns.total, st.session_state.returns.exdiv, st.session_state.returns.div]

@@ -112,15 +112,26 @@ def main():
 
     fig = px.line(st.session_state.values_df)
     fig.update_layout(hovermode='x unified')
-    st.plotly_chart(fig)
+    fig.update_layout(height=600)
+    st.plotly_chart(fig, theme='streamlit', use_container_width=True)
     
+    columns = st.columns([1, 1, 3])
+    rets = [st.session_state.returns.total, st.session_state.returns.exdiv, st.session_state.returns.div]
+    for col, ret, name in zip(columns, rets, ['Total Return', 'Ex Dividends', 'With Dividends']):
+        col.metric(label=name, value=f'{ret*100:.3f}%')
 
+    
+    st.markdown('---')
 
-    st.write(st.session_state.returns.total)
-    st.write(st.session_state.returns.exdiv)
-    st.write(st.session_state.returns.div)
-    st.write(st.session_state.calendar_returns)
-    st.write(st.session_state.cumulative_returns)
+    calendar_returns = st.session_state.calendar_returns[['total', 'exdiv', 'div']].multiply(100)
+    calendar_returns = calendar_returns.loc[~(calendar_returns==0).all(axis=1)]
+
+    df = calendar_returns.transpose()
+    st.write(df)
+
+    cumulative_returns = st.session_state.cumulative_returns[['total', 'exdiv', 'div']].multiply(100)
+    st.write(cumulative_returns.transpose())
+
 
 
     with st.expander('More Info'):

@@ -45,7 +45,7 @@ def main():
     st.sidebar.markdown("### Options")
     log_plot = st.sidebar.checkbox('Log Plot', False)
     fig = reports.plot_flows_plotly(df_new, log_plot)
-    st.plotly_chart(fig)
+    st.plotly_chart(fig, use_container_width=True)
 
 if __name__ == '__main__':
     main()

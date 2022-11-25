@@ -506,6 +506,7 @@ def plot_flows_plotly(flows: pandas.DataFrame, log_plot: bool = True):
         text = [f'${val:.0f}' for val in vals]
         fig.update_yaxes(ticktext=text, tickvals=log_vals)
 
+    fig.update_layout(height=600)
     return fig
 
 

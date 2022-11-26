@@ -19,7 +19,7 @@ from beancount.core.number import ZERO
 from scipy.optimize import fsolve
 
 from beangrow.investments import AccountData, CashFlow, Cat, compute_balance_at
-
+from operator import attrgetter
 # Basic type aliases.
 Account = str
 Currency = str
@@ -247,7 +247,7 @@ def truncate_and_merge_cash_flows(
             )
         )
         additional_cash_flows = None  # Only merge these for the first one!
-    cash_flows.sort(key=lambda item: item[0])
+    cash_flows.sort(key=attrgetter('date'))
     return cash_flows
 
 

@@ -33,6 +33,7 @@ from beancount.core.inventory import Inventory
 from beancount.parser import printer
 
 from beangrow.config_pb2 import Config, Investment, InvestmentConfig
+from attrs import define, field
 
 # Basic type aliases.
 Account = str
@@ -73,16 +74,23 @@ class Cat(enum.Enum):
 
 # Al list of dated cash flows. This is the unit that this program operates in,
 # the sanitized time-series that allows us to compute returns.
-CashFlow = typing.NamedTuple(
-    'CashFlow',
-    [
-        ('date', Date),
-        ('amount', Amount),  # The amount of the cashflow.
-        ('is_dividend', bool),  # True if the flow is a dividend.
-        ('source', str),  # Source of this cash flow.
-        ('account', Account),  # Asset account for which this was generated.
-    ],
-)
+# CashFlow = typing.NamedTuple(
+#     'CashFlow',
+#     [
+#         ('date', Date),
+#         ('amount', Amount),  # The amount of the cashflow.
+#         ('is_dividend', bool),  # True if the flow is a dividend.
+#         ('source', str),  # Source of this cash flow.
+#         ('account', Account),  # Asset account for which this was generated.
+#     ],
+# )
+@define
+class CashFlow:
+    date: Date
+    amount: Amount
+    is_dividend: bool
+    source: str
+    account: Account
 
 
 # All flow information associated with an account.

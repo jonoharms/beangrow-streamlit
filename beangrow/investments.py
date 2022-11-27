@@ -100,7 +100,7 @@ class CashFlow:
 class AccountData:
     account: Account
     currency: Currency
-    cost_currency: Currency
+    cost_currency: Optional[Currency]
     commodity: data.Commodity
     open: data.Open
     close: data.Close
@@ -152,7 +152,7 @@ def categorize_entry(
     return entry._replace(postings=postings)
 
 
-def compute_transaction_signature(entry: data.Directive) -> Tuple[Cat]:
+def compute_transaction_signature(entry: data.Directive):
     """Compute a unique signature for each transaction."""
     categories = set(posting.meta['category'] for posting in entry.postings)
     sigtuple = tuple(sorted(categories, key=lambda item: item.value))
@@ -380,7 +380,7 @@ def process_account_entries(
     config: InvestmentConfig,
     investment: Investment,
     check_explicit_flows: bool,
-) -> AccountData:
+) -> Optional[AccountData]:
     """Process a single account."""
     account = investment.asset_account
     logging.info('Processing account: %s', account)

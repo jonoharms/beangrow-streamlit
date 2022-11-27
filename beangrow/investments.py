@@ -74,16 +74,6 @@ class Cat(enum.Enum):
 
 # Al list of dated cash flows. This is the unit that this program operates in,
 # the sanitized time-series that allows us to compute returns.
-# CashFlow = typing.NamedTuple(
-#     'CashFlow',
-#     [
-#         ('date', Date),
-#         ('amount', Amount),  # The amount of the cashflow.
-#         ('is_dividend', bool),  # True if the flow is a dividend.
-#         ('source', str),  # Source of this cash flow.
-#         ('account', Account),  # Asset account for which this was generated.
-#     ],
-# )
 @define
 class CashFlow:
     date: Date
@@ -94,22 +84,18 @@ class CashFlow:
 
 
 # All flow information associated with an account.
-AccountData = typing.NamedTuple(
-    'AccountData',
-    [
-        ('account', Account),
-        ('currency', Currency),
-        ('cost_currency', Currency),
-        ('commodity', data.Commodity),
-        ('open', data.Open),
-        ('close', data.Close),
-        ('cash_flows', list[CashFlow]),
-        ('transactions', data.Entries),
-        ('balance', Inventory),
-        ('catmap', dict[Account, Cat]),
-    ],
-)
-
+@define
+class AccountData:
+    account: Account
+    currency: Currency
+    cost_currency: Currency
+    commodity: data.Commodity
+    open: data.Open
+    close: data.Close
+    cash_flows: list[CashFlow]
+    transactions: data.Entries
+    balance: Inventory
+    catmap: dict[Account, Cat]
 
 def categorize_accounts(
     config: InvestmentConfig, investment: Investment, accounts: set[Account]

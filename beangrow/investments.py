@@ -82,6 +82,18 @@ class CashFlow:
     source: str
     account: Account
 
+    def to_dict(self):
+        d = {
+            'date': self.date,
+            'amount': float(self.amount.number),
+            'currency': self.amount.currency,
+            'is_dividend': self.is_dividend,
+            'source': self.source,
+            'investment': self.account,
+        }
+
+        return d
+
 
 # All flow information associated with an account.
 @define
@@ -96,6 +108,7 @@ class AccountData:
     transactions: data.Entries
     balance: Inventory
     catmap: dict[Account, Cat]
+
 
 def categorize_accounts(
     config: InvestmentConfig, investment: Investment, accounts: set[Account]
@@ -534,27 +547,10 @@ def write_account_file(
 
 def cash_flows_to_table(cash_flows: list[CashFlow]) -> pandas.DataFrame:
     """Flatten a list of cash flows to an HTML table string."""
-    header = [
-        'date',
-        'amount',
-        'currency',
-        'is_dividend',
-        'source',
-        'investment',
-    ]
-    rows = []
-    for flow in cash_flows:
-        rows.append(
-            (
-                flow.date,
-                float(flow.amount.number),
-                flow.amount.currency,
-                flow.is_dividend,
-                flow.source,
-                flow.account,
-            )
-        )
-    return pandas.DataFrame(columns=header, data=rows)
+    records = [flow.to_dict() for flow in cash_flows]
+    df = pandas.DataFrame.from_records(records)
+
+    return df
 
 
 def write_transactions_by_type(

@@ -10,7 +10,9 @@ import re
 
 from google.protobuf import text_format
 
-from beangrow.config_pb2 import Config
+from beangrow.config_pb2 import (
+    Config,
+)   # pyright: reportGeneralTypeIssues=false
 
 # Basic type aliases.
 Account = str

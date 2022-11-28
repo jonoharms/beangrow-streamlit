@@ -98,6 +98,8 @@ def main():
 
         streamlit_helpers.load_ledger(args)
 
+    
+
     report = streamlit_helpers.select_report()
     if 'cash_flows' not in st.session_state:
         streamlit_helpers.load_report(report)

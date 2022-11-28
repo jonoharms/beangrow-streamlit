@@ -1,4 +1,3 @@
-
 import datetime
 import logging
 
@@ -46,12 +45,13 @@ def load_ledger(args):
     logging.info('Reading ledger: %s', args.ledger)
     entries, _, options_map = loader.load_file(args.ledger)
     accounts = getters.get_accounts(entries)
-    dcontext = options_map['dcontext']
 
     end_date = args.end_date or datetime.date.today()
 
     # Load, filter and expand the configuration.
-    config = configlib.read_config(args.config, args.filter_reports, accounts)
+    config = configlib.read_config(
+        args.config, args.filter_reports, list(accounts)
+    )
 
     st.session_state.args = args
     st.session_state.entries = entries

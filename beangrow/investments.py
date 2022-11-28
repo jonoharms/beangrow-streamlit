@@ -11,29 +11,26 @@ __copyright__ = 'Copyright (C) 2020  Martin Blais'
 __license__ = 'GNU GPLv2'
 
 import collections
-import copy
 import datetime
 import enum
 import logging
-import os
 import re
 import sys
-import typing
-from functools import partial
-from os import path
-from pprint import pprint
 from typing import Optional, Tuple
 
 import pandas
 import streamlit as st
-from beancount.core import account as accountlib
+from attrs import define
 from beancount.core import convert, data, display_context, getters
 from beancount.core.amount import Amount
 from beancount.core.inventory import Inventory
 from beancount.parser import printer
 
-from beangrow.config_pb2 import Config, Investment, InvestmentConfig
-from attrs import define, field
+from beangrow.config_pb2 import (  # pyright: reportGeneralTypeIssues=false
+    Config,
+    Investment,
+    InvestmentConfig,
+)
 
 # Basic type aliases.
 Account = str
@@ -83,9 +80,10 @@ class CashFlow:
     account: Account
 
     def to_dict(self):
+        amount = float(self.amount.number) if self.amount.number else None
         d = {
             'date': self.date,
-            'amount': float(self.amount.number),
+            'amount': amount,
             'currency': self.amount.currency,
             'is_dividend': self.is_dividend,
             'source': self.source,
@@ -258,7 +256,7 @@ def handle_fee_from_liquidation(*args) -> list[CashFlow]:
 @register(
     [Cat.ASSET, Cat.INCOME, Cat.EXPENSES], 'Fee from liquidation (with P/L)'
 )
-def handle_cost_basis_adjustments(*args) -> list[CashFlow]:
+def handle_cost_basis_adjustments0(*args) -> list[CashFlow]:
     """No cash is disbursed for these adjustments, just a change in basis. This
     affects tax only. There are no associated cash flows."""
     return []
@@ -266,7 +264,7 @@ def handle_cost_basis_adjustments(*args) -> list[CashFlow]:
 
 @register([Cat.EXPENSES, Cat.OTHER], 'Internal expense')
 @register([Cat.OTHER], 'Movement between internal accounts')
-def handle_cost_basis_adjustments(*args) -> list[CashFlow]:
+def handle_cost_basis_adjustments1(*args) -> list[CashFlow]:
     """It's internal changes, no flows."""
     return []
 
@@ -554,7 +552,7 @@ def cash_flows_to_table(cash_flows: list[CashFlow]) -> pandas.DataFrame:
 
 
 def write_transactions_by_type(
-    account_data: AccountData, dcontext: display_context.DisplayContext
+    account_data: list[AccountData], dcontext: display_context.DisplayContext
 ):
     """Write files of transactions by signature, for debugging."""
 
@@ -571,7 +569,7 @@ def write_transactions_by_type(
         for sig, sigentries in signature_map.items()
     }
     df = pandas.DataFrame(
-        index=summary.keys(),
+        index=list(summary.keys()),
         data=summary.values(),
         columns=['Description', 'Number of Entries'],
     )

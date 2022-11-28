@@ -9,6 +9,7 @@ import collections
 import datetime
 import itertools
 import typing
+from operator import attrgetter
 from typing import Optional, Tuple
 
 import numpy as np
@@ -19,7 +20,7 @@ from beancount.core.number import ZERO
 from scipy.optimize import fsolve
 
 from beangrow.investments import AccountData, CashFlow, Cat, compute_balance_at
-from operator import attrgetter
+
 # Basic type aliases.
 Account = str
 Currency = str

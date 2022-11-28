@@ -10,17 +10,11 @@ import datetime
 import logging
 from pathlib import Path
 
-import pandas as pd
 import plotly.express as px
 import streamlit as st
-from beancount import loader
-from beancount.core import data, getters, prices
-
-from beangrow import config as configlib
-from beangrow import investments, reports, streamlit_helpers
-from beangrow import returns as returnslib
-from beangrow.returns import Pricer
 from streamlit_extras.dataframe_explorer import dataframe_explorer
+
+from beangrow import streamlit_helpers
 
 st.set_page_config(layout='wide')
 
@@ -94,8 +88,6 @@ def main():
     st.write('# Beangrow-Streamlit')
     st.write('Compute portfolio returns from a Beancount ledger')
 
-
-
     if 'args' not in st.session_state:
 
         if args.verbose:
@@ -114,25 +106,34 @@ def main():
     fig.update_layout(hovermode='x unified')
     fig.update_layout(height=600)
     st.plotly_chart(fig, use_container_width=True)
-    
+
     columns = st.columns([1, 1, 3])
-    rets = [st.session_state.returns.total, st.session_state.returns.exdiv, st.session_state.returns.div]
-    for col, ret, name in zip(columns, rets, ['Total Return', 'Ex Dividends', 'With Dividends']):
+    rets = [
+        st.session_state.returns.total,
+        st.session_state.returns.exdiv,
+        st.session_state.returns.div,
+    ]
+    for col, ret, name in zip(
+        columns, rets, ['Total Return', 'Ex Dividends', 'With Dividends']
+    ):
         col.metric(label=name, value=f'{ret*100:.3f}%')
 
-    
     st.markdown('---')
 
-    calendar_returns = st.session_state.calendar_returns[['total', 'exdiv', 'div']].multiply(100)
-    calendar_returns = calendar_returns.loc[~(calendar_returns==0).all(axis=1)]
+    calendar_returns = st.session_state.calendar_returns[
+        ['total', 'exdiv', 'div']
+    ].multiply(100)
+    calendar_returns = calendar_returns.loc[
+        ~(calendar_returns == 0).all(axis=1)
+    ]
 
     df = calendar_returns.transpose()
     st.write(df)
 
-    cumulative_returns = st.session_state.cumulative_returns[['total', 'exdiv', 'div']].multiply(100)
+    cumulative_returns = st.session_state.cumulative_returns[
+        ['total', 'exdiv', 'div']
+    ].multiply(100)
     st.write(cumulative_returns.transpose())
-
-
 
     with st.expander('More Info'):
         st.write(f'**Ledger:** {args.ledger.resolve()}')
@@ -145,12 +146,9 @@ def main():
             st.write(tmp_df)
 
         with tab1:
-            st.write("### Accounts")
+            st.write('### Accounts')
             tmp_df1 = dataframe_explorer(st.session_state.accounts_df)
             st.write(tmp_df1)
-
-
-    
 
 
 if __name__ == '__main__':

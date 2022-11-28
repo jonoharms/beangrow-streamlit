@@ -1,11 +1,8 @@
 
-import argparse
 import datetime
 import logging
-from pathlib import Path
 
 import pandas as pd
-import plotly.express as px
 import streamlit as st
 from beancount import loader
 from beancount.core import data, getters, prices
@@ -18,25 +15,31 @@ from beangrow.returns import Pricer
 Date = datetime.date
 TODAY = Date.today()
 
+
 def select_report():
     if 'report' not in st.session_state:
         current_report_index = 0
     else:
         current_report = st.session_state.report
-        tmp = [config.name == current_report.name for config in st.session_state.config.groups.group]
+        tmp = [
+            config.name == current_report.name
+            for config in st.session_state.config.groups.group
+        ]
         current_report_index = next(i for i, rep in enumerate(tmp) if rep)
-    
+
     report = st.sidebar.selectbox(
         'Group',
         st.session_state.config.groups.group,
         format_func=lambda x: x.name,
-        index = current_report_index
+        index=current_report_index,
     )
 
-    reload_button = st.sidebar.button('Load Group', on_click=load_report,
-        args=(report, ))
+    reload_button = st.sidebar.button(
+        'Load Group', on_click=load_report, args=(report,)
+    )
 
     return report
+
 
 def load_ledger(args):
     # Load the example file.
@@ -70,6 +73,7 @@ def load_ledger(args):
     st.success('Finished Reading Ledger')
     st.text(f'Number of entries loaded: {len(entries)}')
 
+
 def load_report(report):
 
     account_data = [
@@ -77,7 +81,7 @@ def load_report(report):
     ]
 
     target_currency = report.currency
-    
+
     if not target_currency:
         cost_currencies = set(r.cost_currency for r in account_data)
         target_currency = cost_currencies.pop()
@@ -92,7 +96,10 @@ def load_report(report):
     )
 
     returns = returnslib.compute_returns(
-        cash_flows, st.session_state.pricer, target_currency, st.session_state.end_date
+        cash_flows,
+        st.session_state.pricer,
+        target_currency,
+        st.session_state.end_date,
     )
 
     transactions = data.sorted(
@@ -101,7 +108,11 @@ def load_report(report):
 
     dates = [f.date for f in cash_flows]
     dates_all, gamounts = reports.get_amortized_value_plot_data_from_flows(
-        st.session_state.price_map, cash_flows, returns.total, target_currency, dates
+        st.session_state.price_map,
+        cash_flows,
+        returns.total,
+        target_currency,
+        dates,
     )
     value_dates, value_values = returnslib.compute_portfolio_values(
         st.session_state.price_map, transactions, target_currency
@@ -138,4 +149,3 @@ def load_report(report):
     st.session_state.cumulative_returns = cumulative_returns
     st.session_state.accounts_df = accounts_df
     st.session_state.report = report
-    

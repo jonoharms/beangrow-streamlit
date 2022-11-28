@@ -1,11 +1,13 @@
 import pandas as pd
 import streamlit as st
 from beancount.core import data, prices
-
-from beangrow import investments, reports, streamlit_helpers
-from beangrow import returns as returnslib
-from beangrow.returns import Pricer, Returns
 from streamlit_extras.dataframe_explorer import dataframe_explorer
+
+from beangrow import investments, reports
+from beangrow import returns as returnslib
+from beangrow import streamlit_helpers
+from beangrow.returns import Pricer, Returns
+
 
 def main():
 
@@ -28,7 +30,7 @@ def main():
 
     if 'cash_flows' not in st.session_state:
         streamlit_helpers.load_report(report)
-    
+
     # # Render cash flows.
     # show_pyplot = st.sidebar.checkbox('Show pyplot plot', False)
     # if show_pyplot:
@@ -41,11 +43,12 @@ def main():
     with st.expander('Show DataFrame'):
         st.write(df_new)
 
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### Options")
+    st.sidebar.markdown('---')
+    st.sidebar.markdown('### Options')
     log_plot = st.sidebar.checkbox('Log Plot', False)
     fig = reports.plot_flows_plotly(df_new, log_plot)
     st.plotly_chart(fig, use_container_width=True)
+
 
 if __name__ == '__main__':
     main()

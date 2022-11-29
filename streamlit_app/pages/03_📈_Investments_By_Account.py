@@ -13,13 +13,12 @@ from beangrow import investments, reports
 
 def main():
 
-    if 'args' not in st.session_state:
+    if 'ledger' not in st.session_state:
         st.write('### Run Main Page First')
         return
 
-    args = st.session_state.args
-    account_data_map = st.session_state.account_data_map
-    dcontext = st.session_state.options_map['dcontext']
+    account_data_map = st.session_state.ledger.account_data_map
+    dcontext = st.session_state.ledger.options_map['dcontext']
 
     account = st.sidebar.selectbox(
         'Select Account', [ad.account for ad in account_data_map.values()]

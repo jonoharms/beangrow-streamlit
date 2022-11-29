@@ -13,7 +13,7 @@ def main():
 
     st.write('# Cash Flow')
 
-    if 'args' not in st.session_state:
+    if 'ledger' not in st.session_state:
         st.write('### Run Main Page First')
         return
 
@@ -26,10 +26,10 @@ def main():
     # for _, filename in sorted(plots.items()):
     #     fprint('<img src={} style="width: 100%"/>'.format(filename))
 
-    report = streamlit_helpers.select_report()
+    report = streamlit_helpers.select_report(st.session_state.ledger)
 
     if 'cash_flows' not in st.session_state:
-        streamlit_helpers.load_report(report)
+        streamlit_helpers.load_report(st.session_state.ledger, report)
 
     # # Render cash flows.
     # show_pyplot = st.sidebar.checkbox('Show pyplot plot', False)

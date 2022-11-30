@@ -32,7 +32,7 @@ import tempfile
 import typing
 from functools import partial
 from os import path
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, Callable
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
@@ -40,6 +40,7 @@ import numpy as np
 import pandas
 from dateutil.relativedelta import relativedelta
 from pandas.plotting import register_matplotlib_converters
+from attrs import define
 
 register_matplotlib_converters()
 
@@ -125,17 +126,14 @@ def compute_returns_table(
     return df
 
 
-ReportData = typing.NamedTuple(
-    'ReportData',
-    [
-        ('cash_flows', pandas.DataFrame),
-        ('returns', pandas.DataFrame),
-        ('flow_value', pandas.Series),
-        ('flow_amortized_value', pandas.Series),
-        ('portfolio_value', pandas.Series),
-        ('benchmark_func', callable),
-    ],
-)
+@define
+class ReportData:
+    cash_flows: pandas.DataFrame
+    returns: pandas.DataFrame
+    flow_value: pandas.Series
+    flow_amortized_value: pandas.Series
+    portfolio_value: pandas.Series
+    benchmark_func: Callable
 
 
 def compute_report_data(

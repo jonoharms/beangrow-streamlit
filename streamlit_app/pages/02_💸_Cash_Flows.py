@@ -26,10 +26,10 @@ def main():
     # for _, filename in sorted(plots.items()):
     #     fprint('<img src={} style="width: 100%"/>'.format(filename))
 
-    report = streamlit_helpers.select_report(st.session_state.ledger)
+    report = st.session_state.ledger.select_report()
 
     if 'cash_flows' not in st.session_state:
-        streamlit_helpers.load_report(st.session_state.ledger, report)
+        st.session_state.ledger.load_report(report)
 
     # # Render cash flows.
     # show_pyplot = st.sidebar.checkbox('Show pyplot plot', False)

@@ -14,7 +14,7 @@ import plotly.express as px
 import streamlit as st
 from streamlit_extras.dataframe_explorer import dataframe_explorer
 
-from beangrow.streamlit_helpers import Ledger, load_report, select_report
+from beangrow.streamlit_helpers import Ledger
 
 st.set_page_config(layout='wide')
 
@@ -100,9 +100,9 @@ def main():
 
     
 
-    report = select_report(st.session_state['ledger'])
+    report = st.session_state.ledger.select_report()
     if 'cash_flows' not in st.session_state:
-        load_report(st.session_state['ledger'], report)
+        st.session_state.ledger.load_report(report)
 
     fig = px.line(st.session_state.values_df)
     fig.update_layout(hovermode='x unified')

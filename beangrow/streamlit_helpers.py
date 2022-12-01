@@ -5,20 +5,42 @@ import pandas as pd
 import streamlit as st
 from beancount import loader
 from beancount.core import data, getters, prices
-
+import plotly.express as px
 from beangrow import config as configlib
 from beangrow import investments, reports
 from beangrow import returns as returnslib
-from beangrow.returns import Pricer
+from beangrow.returns import Pricer, Returns
 from attrs import define
 from typing import NamedTuple
 from beangrow.config_pb2 import (
     Config,
-)
+    Group,
+)   # pyright: reportGeneralTypeIssues=false
 
 Date = datetime.date
 TODAY = Date.today()
 
+
+@define
+class ReportData:
+    report: Group
+    cash_flows: pd.DataFrame
+    returns: Returns
+    cumulative_returns: list[Returns]
+    calendar_returns: list[Returns]
+    portfolio_value: pd.DataFrame
+    transactions: data.Entries
+    accounts: pd.DataFrame
+
+    def plot_plotly(self):
+        fig = px.line(self.portfolio_value)
+        fig.update_layout(hovermode='x unified')
+        fig.update_layout(height=600)
+
+        return fig
+        
+
+    
 
 @define
 class Ledger:
@@ -39,12 +61,10 @@ class Ledger:
         entries, _, options_map = loader.load_file(args.ledger)
         accounts = list(getters.get_accounts(entries))
 
-        end_date = args.end_date or datetime.date.today()
+        end_date = datetime.date.today()
 
         # Load, filter and expand the configuration.
-        config = configlib.read_config(
-            args.config, args.filter_reports, list(accounts)
-        )
+        config = configlib.read_config(args.config, [], list(accounts))
 
         account_data_map = investments.extract(
             entries, config, end_date, False
@@ -90,7 +110,7 @@ class Ledger:
 
         return report
 
-    def load_report(self, report):
+    def load_report(self, report: Group):
 
         account_data = [
             self.account_data_map[name] for name in report.investment
@@ -111,7 +131,7 @@ class Ledger:
             self.pricer, account_data, None, self.end_date
         )
 
-        returns = returnslib.compute_returns(
+        total_returns = returnslib.compute_returns(
             cash_flows,
             self.pricer,
             target_currency,
@@ -126,7 +146,7 @@ class Ledger:
         dates_all, gamounts = reports.get_amortized_value_plot_data_from_flows(
             self.price_map,
             cash_flows,
-            returns.total,
+            total_returns.total,
             target_currency,
             dates,
         )
@@ -159,11 +179,17 @@ class Ledger:
 
         accounts_df = reports.get_accounts_table(account_data)
 
-        st.session_state.cash_flows = cash_flows
-        st.session_state.returns = returns
-        st.session_state.transactions = transactions
-        st.session_state.values_df = values_df
-        st.session_state.calendar_returns = calendar_returns
-        st.session_state.cumulative_returns = cumulative_returns
-        st.session_state.accounts_df = accounts_df
-        st.session_state.report = report
+        reportdata = ReportData(
+            report,
+            cash_flows,
+            total_returns,
+            cumulative_returns,
+            calendar_returns,
+            values_df,
+            transactions,
+            accounts_df,
+        )
+
+        st.session_state['reportdata'] = reportdata
+
+        return reportdata

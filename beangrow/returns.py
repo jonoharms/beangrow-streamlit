@@ -19,8 +19,9 @@ from beancount.core.inventory import Inventory
 from beancount.core.number import ZERO
 from scipy.optimize import fsolve
 
-from beangrow.investments import AccountData, CashFlow, Cat, compute_balance_at
 
+from beangrow.investments import AccountData, CashFlow, Cat, compute_balance_at
+from attrs import define, asdict
 # Basic type aliases.
 Account = str
 Currency = str
@@ -98,39 +99,25 @@ def compute_irr(
     )
     return irr.item()
 
-
-Returns = typing.NamedTuple(
-    'Returns',
-    [
-        ('groupname', str),
-        ('first_date', Date),
-        ('last_date', Date),
-        ('years', float),
-        ('total', float),
-        ('exdiv', float),
-        ('div', float),
-        ('flows', list[CashFlow]),
-    ],
-)
+@define
+class Returns:
+    groupname: str
+    first_date: Date
+    last_date: Date
+    years: float
+    total: float
+    exdiv: float
+    div: float
+    flows: list[CashFlow]
 
 
 def returns_to_dataframe(returns_list: list[Returns]) -> pandas.DataFrame:
-    header = ['first_date', 'last_date', 'years', 'total', 'exdiv', 'div']
-    rows = []
-    index = []
-    for returns in returns_list:
-        index.append(returns.groupname)
-        rows.append(
-            (
-                returns.first_date,
-                returns.last_date,
-                returns.years,
-                returns.total,
-                returns.exdiv,
-                returns.div,
-            )
-        )
-    return pandas.DataFrame(columns=header, data=rows, index=index)
+
+    records = [asdict(ret, filter=lambda attr, value: attr.name != "flows") for ret in returns_list]
+    df = pandas.DataFrame.from_records(records)
+    df = df.set_index('groupname')
+
+    return df
 
 
 def compute_returns(

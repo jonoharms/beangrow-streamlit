@@ -12,6 +12,7 @@ from pathlib import Path
 
 import plotly.express as px
 import streamlit as st
+from beangrow import returns as returnslib
 from streamlit_extras.dataframe_explorer import dataframe_explorer
 
 from beangrow.streamlit_helpers import Ledger
@@ -40,48 +41,10 @@ def main():
     )
 
     parser.add_argument(
-        'filter_reports',
-        nargs='*',
-        help='Optional names of specific subset of reports to analyze.',
-    )
-
-    parser.add_argument(
-        '-v', '--verbose', action='store_true', help='Verbose mode'
-    )
-
-    parser.add_argument(
-        '-d',
-        '--days-price-threshold',
-        action='store',
-        type=int,
-        default=5,
-        help='The number of days to tolerate price latency.',
-    )
-
-    parser.add_argument(
-        '-e',
-        '--end-date',
-        action='store',
-        type=datetime.date.fromisoformat,
-        help='The end date to compute returns up to.',
-    )
-
-    parser.add_argument(
         '-j',
         '--parallel',
         action='store_true',
         help='Run report generation concurrently.',
-    )
-
-    parser.add_argument(
-        '-E',
-        '--check-explicit-flows',
-        action='store_true',
-        help=(
-            'Enables comparison of the general categorization method '
-            'with the explicit one with specialized explicit  handlers '
-            'per signature.'
-        ),
     )
 
     args = parser.parse_args()
@@ -89,31 +52,26 @@ def main():
     st.write('Compute portfolio returns from a Beancount ledger')
 
     if 'ledger' not in st.session_state:
+        ledger = Ledger.from_args(args)
+        st.session_state['ledger'] = ledger
+    else:
+        ledger = st.session_state.ledger
 
-        if args.verbose:
-            logging.basicConfig(
-                level=logging.DEBUG, format='%(levelname)-8s: %(message)s'
-            )
-            logging.getLogger('matplotlib.font_manager').disabled = True
+    report = ledger.select_report()
+    if 'reportdata' not in st.session_state:
+        reportdata = ledger.load_report(report)
+        st.session_state['reportdata'] = reportdata
+    else:
+        reportdata = st.session_state.reportdata
 
-        st.session_state['ledger'] = Ledger.from_args(args)
-
-    
-
-    report = st.session_state.ledger.select_report()
-    if 'cash_flows' not in st.session_state:
-        st.session_state.ledger.load_report(report)
-
-    fig = px.line(st.session_state.values_df)
-    fig.update_layout(hovermode='x unified')
-    fig.update_layout(height=600)
-    st.plotly_chart(fig, use_container_width=True)
+    fig = reportdata.plot_plotly()
+    st.plotly_chart(fig)
 
     columns = st.columns([1, 1, 3])
     rets = [
-        st.session_state.returns.total,
-        st.session_state.returns.exdiv,
-        st.session_state.returns.div,
+        reportdata.returns.total,
+        reportdata.returns.exdiv,
+        reportdata.returns.div,
     ]
     for col, ret, name in zip(
         columns, rets, ['Total Return', 'Ex Dividends', 'With Dividends']
@@ -122,9 +80,12 @@ def main():
 
     st.markdown('---')
 
-    calendar_returns = st.session_state.calendar_returns[
-        ['total', 'exdiv', 'div']
-    ].multiply(100)
+    calendar_returns = returnslib.returns_to_dataframe(
+        reportdata.calendar_returns
+    )
+    calendar_returns = calendar_returns[['total', 'exdiv', 'div']].multiply(
+        100
+    )
     calendar_returns = calendar_returns.loc[
         ~(calendar_returns == 0).all(axis=1)
     ]
@@ -132,7 +93,10 @@ def main():
     df = calendar_returns.transpose()
     st.write(df)
 
-    cumulative_returns = st.session_state.cumulative_returns[
+    cumulative_returns = returnslib.returns_to_dataframe(
+        reportdata.cumulative_returns
+    )
+    cumulative_returns = cumulative_returns[
         ['total', 'exdiv', 'div']
     ].multiply(100)
     st.write(cumulative_returns.transpose())
@@ -144,12 +108,12 @@ def main():
 
         with tab0:
             st.write('### Value DF')
-            tmp_df = dataframe_explorer(st.session_state.values_df)
+            tmp_df = dataframe_explorer(reportdata.portfolio_value)
             st.write(tmp_df)
 
         with tab1:
             st.write('### Accounts')
-            tmp_df1 = dataframe_explorer(st.session_state.accounts_df)
+            tmp_df1 = dataframe_explorer(reportdata.accounts)
             st.write(tmp_df1)
 
 

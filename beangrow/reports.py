@@ -89,11 +89,11 @@ def render_table(
 
 
 # A named date interval: (name, start date, end date).
-Interval = Tuple[str, Date, Date]
-
-
-def compute_returns_row(row: pandas.Series):
-    return
+@define
+class Interval:
+    name: str
+    start_date: Date
+    end_date: Date
 
 
 def compute_returns_table(
@@ -103,27 +103,22 @@ def compute_returns_table(
     intervals: list[Interval],
 ):
     """Compute a table of sequential returns, and return the raw Returns objects as well."""
-    df = pandas.DataFrame(
-        intervals, columns=['name', 'start_date', 'end_date']
-    )
-    df = df.set_index('name')
+
     returns = []
-    for row in df.itertuples():
+    for interval in intervals:
         cash_flows = returnslib.truncate_and_merge_cash_flows(
-            pricer, account_data, row.start_date, row.end_date
+            pricer, account_data, interval.start_date, interval.end_date
         )
         ret = returnslib.compute_returns(
             cash_flows,
             pricer,
             target_currency,
-            row.end_date,
-            groupname=row.Index,
+            interval.end_date,
+            groupname=interval.name,
         )
         returns.append(ret)
 
-    df = returnslib.returns_to_dataframe(returns)
-
-    return df
+    return returns
 
 
 @define
@@ -561,26 +556,26 @@ def write_price_directives(
 def get_calendar_intervals(date: Date) -> list[Interval]:
     """Return a list of date pairs for sequential intervals."""
     intervals = [
-        (str(year), Date(year, 1, 1), Date(year + 1, 1, 1))
+        Interval(str(year), Date(year, 1, 1), Date(year + 1, 1, 1))
         for year in range(TODAY.year - 15, TODAY.year)
     ]
-    intervals.append((str(TODAY.year), Date(TODAY.year, 1, 1), date))
+    intervals.append(Interval(str(TODAY.year), Date(TODAY.year, 1, 1), date))
     return intervals
 
 
 def get_cumulative_intervals(date: Date) -> list[Interval]:
     """Return a list of date pairs for sequential intervals."""
     return [
-        ('15_years_ago', Date(date.year - 15, 1, 1), date),
-        ('10_years_ago', Date(date.year - 10, 1, 1), date),
-        ('5_years_ago', Date(date.year - 5, 1, 1), date),
-        ('4_years_ago', Date(date.year - 4, 1, 1), date),
-        ('3_years_ago', Date(date.year - 3, 1, 1), date),
-        ('2_years_ago', Date(date.year - 2, 1, 1), date),
-        ('1_year_ago', Date(date.year - 1, 1, 1), date),
-        ('ytd', Date(date.year, 1, 1), date),
-        ('rolling_6_months_ago', date - relativedelta(months=6), date),
-        ('rolling_3_months_ago', date - relativedelta(months=3), date),
+        Interval('15_years_ago', Date(date.year - 15, 1, 1), date),
+        Interval('10_years_ago', Date(date.year - 10, 1, 1), date),
+        Interval('5_years_ago', Date(date.year - 5, 1, 1), date),
+        Interval('4_years_ago', Date(date.year - 4, 1, 1), date),
+        Interval('3_years_ago', Date(date.year - 3, 1, 1), date),
+        Interval('2_years_ago', Date(date.year - 2, 1, 1), date),
+        Interval('1_year_ago', Date(date.year - 1, 1, 1), date),
+        Interval('ytd', Date(date.year, 1, 1), date),
+        Interval('rolling_6_months_ago', date - relativedelta(months=6), date),
+        Interval('rolling_3_months_ago', date - relativedelta(months=3), date),
     ]
 
 

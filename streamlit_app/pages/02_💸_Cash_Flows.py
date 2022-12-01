@@ -14,8 +14,10 @@ def main():
     st.write('# Cash Flow')
 
     if 'ledger' not in st.session_state:
-        st.write('### Run Main Page First')
+        st.write('## Run Returns First')
         return
+    else:
+        ledger = st.session_state.ledger
 
     """Explore the Cash Flows for the selected group."""
 
@@ -26,10 +28,12 @@ def main():
     # for _, filename in sorted(plots.items()):
     #     fprint('<img src={} style="width: 100%"/>'.format(filename))
 
-    report = st.session_state.ledger.select_report()
-
-    if 'cash_flows' not in st.session_state:
-        st.session_state.ledger.load_report(report)
+    report = ledger.select_report()
+    if 'reportdata' not in st.session_state:
+        reportdata = ledger.load_report(report)
+        st.session_state['reportdata'] = reportdata
+    else:
+        reportdata = st.session_state.reportdata
 
     # # Render cash flows.
     # show_pyplot = st.sidebar.checkbox('Show pyplot plot', False)
@@ -37,7 +41,7 @@ def main():
     #     fig = reports.plot_flows_pyplot(st.session_state.cash_flows)
     #     st.write(fig)
 
-    df = investments.cash_flows_to_table(st.session_state.cash_flows)
+    df = investments.cash_flows_to_table(reportdata.cash_flows)
 
     df_new = dataframe_explorer(df)
     with st.expander('Show DataFrame'):

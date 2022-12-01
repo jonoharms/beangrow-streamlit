@@ -22,6 +22,7 @@ from scipy.optimize import fsolve
 
 from beangrow.investments import AccountData, CashFlow, Cat, compute_balance_at
 from attrs import define, asdict
+
 # Basic type aliases.
 Account = str
 Currency = str
@@ -78,7 +79,8 @@ def compute_irr(
         usd_amount = pricer.convert_amount(
             flow.amount, target_currency, date=flow.date
         )
-        usd_flows.append(float(usd_amount.number))
+        number = usd_amount.number if usd_amount.number is not None else 0.0
+        usd_flows.append(float(number))
     cash_flows = np.array(usd_flows)
 
     # Array of time in years.
@@ -99,6 +101,7 @@ def compute_irr(
     )
     return irr.item()
 
+
 @define
 class Returns:
     groupname: str
@@ -113,7 +116,10 @@ class Returns:
 
 def returns_to_dataframe(returns_list: list[Returns]) -> pandas.DataFrame:
 
-    records = [asdict(ret, filter=lambda attr, value: attr.name != "flows") for ret in returns_list]
+    records = [
+        asdict(ret, filter=lambda attr, value: attr.name != 'flows')
+        for ret in returns_list
+    ]
     df = pandas.DataFrame.from_records(records)
     df = df.set_index('groupname')
 

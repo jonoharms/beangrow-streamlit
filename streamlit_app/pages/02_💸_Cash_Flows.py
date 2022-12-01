@@ -35,11 +35,10 @@ def main():
     else:
         reportdata = st.session_state.reportdata
 
-    # # Render cash flows.
-    # show_pyplot = st.sidebar.checkbox('Show pyplot plot', False)
-    # if show_pyplot:
-    #     fig = reports.plot_flows_pyplot(st.session_state.cash_flows)
-    #     st.write(fig)
+    st.sidebar.markdown('---')
+    st.sidebar.markdown('### Options')
+    log_plot = st.sidebar.checkbox('Log Plot', False)
+    show_pyplot = st.sidebar.checkbox('Show pyplot plot', False)
 
     df = investments.cash_flows_to_table(reportdata.cash_flows)
 
@@ -47,11 +46,12 @@ def main():
     with st.expander('Show DataFrame'):
         st.write(df_new)
 
-    st.sidebar.markdown('---')
-    st.sidebar.markdown('### Options')
-    log_plot = st.sidebar.checkbox('Log Plot', False)
     fig = reports.plot_flows_plotly(df_new, log_plot)
     st.plotly_chart(fig, use_container_width=True)
+
+    if show_pyplot:
+        fig = reports.plot_flows_pyplot(reportdata.cash_flows)
+        st.write(fig)
 
 
 if __name__ == '__main__':

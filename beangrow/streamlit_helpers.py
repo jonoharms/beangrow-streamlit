@@ -193,3 +193,19 @@ class Ledger:
         st.session_state['reportdata'] = reportdata
 
         return reportdata
+    
+    def generate_price_pages(self):
+        """Produce renders of price time series for each currency.
+        This should help us debug issues with price recording, in particulawr,
+        with respect to stock splits."""
+
+        # Write out a returns file for every account.
+        pairs = set(
+            (ad.currency, ad.cost_currency)
+            for ad in self.account_data_map.values()
+            if ad.currency and ad.cost_currency
+        )
+
+        base_quote = st.sidebar.selectbox('Select Pair', sorted(pairs))
+        fig = reports.generate_price_page(base_quote, self.price_map)
+        return fig

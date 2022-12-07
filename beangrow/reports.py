@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Calculate my true returns, including dividends and real costs.
 """
-# pyright: reportGeneralTypeIssues = false
+
 import plotly.express as px
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
@@ -14,8 +14,8 @@ from beancount.parser import printer
 from beangrow import investments
 from beangrow import returns as returnslib
 from beangrow.config_pb2 import (
-    Config,
-    Group,
+    Config,  # type: ignore
+    Group,  # type: ignore
 )
 from beangrow.investments import AccountData, CashFlow
 from beangrow.returns import Pricer, Returns
@@ -64,33 +64,6 @@ CurrencyPair = Tuple[Currency, Currency]
 
 IRR_FORMAT = '{:32}: {:6.2%} ({:6.2%} ex-div, {:6.2%} div)'
 
-Table = typing.NamedTuple(
-    'Table', [('header', list[str]), ('rows', list[list[Any]])]
-)
-
-
-def render_table(
-    table: Table, floatfmt: Optional[str] = None, classes: Optional[str] = None
-) -> str:
-    """Render a simple data table to HTML."""
-    oss = io.StringIO()
-    fprint = partial(print, file=oss)
-    fprint('<table class="{}">'.format(' '.join(classes or [])))
-    fprint('<tr>')
-    for heading in table.header:
-        fprint('<th>{}</th>'.format(heading))
-    fprint('</tr>')
-    for row in table.rows:
-        fprint('<tr>')
-        for value in row:
-            if isinstance(value, float) and floatfmt:
-                value = floatfmt.format(value)
-            fprint('<td>{}</td>'.format(value))
-        fprint('</tr>')
-    fprint('</table>')
-    return oss.getvalue()
-
-
 # A named date interval: (name, start date, end date).
 @define
 class Interval:
@@ -122,129 +95,6 @@ def compute_returns_table(
         returns.append(ret)
 
     return returns
-
-
-# @define
-# class ReportData:
-#     cash_flows: pandas.DataFrame
-#     returns: pandas.DataFrame
-#     flow_value: pandas.Series
-#     flow_amortized_value: pandas.Series
-#     portfolio_value: pandas.Series
-#     benchmark_func: Callable
-
-
-# def compute_report_data(
-#     pricer,
-#     account_data,
-#     end_date,
-#     target_currency,
-#     additional_cash_flows: Optional[list[Tuple[Date, Amount, Account]]] = None,
-# ):
-
-#     additional_cash_flows = [
-#         CashFlow(d, amt, False, 'additional', ac)
-#         for (d, amt, ac) in (additional_cash_flows or [])
-#     ]
-#     cash_flows = flows = returnslib.truncate_and_merge_cash_flows(
-#         pricer,
-#         account_data,
-#         None,
-#         end_date,
-#         additional_cash_flows=additional_cash_flows,
-#     )
-#     total_returns = returnslib.compute_returns(
-#         cash_flows, pricer, target_currency, end_date, groupname='Total'
-#     )
-#     transactions = data.sorted(
-#         [txn for ad in account_data for txn in ad.transactions]
-#     )
-
-#     calendar_returns = _compute_returns_with_table(
-#         pricer, target_currency, account_data, get_calendar_intervals(end_date)
-#     )[1]
-#     cumulative_returns = _compute_returns_with_table(
-#         pricer,
-#         target_currency,
-#         account_data,
-#         get_cumulative_intervals(end_date),
-#     )[1]
-
-#     dates = [f.date for f in flows]
-
-#     dates_flow, amounts_flow = run_benchmark(
-#         cash_flows, dates, target_currency, pricer.price_map, 0
-#     )
-#     flow_value = pandas.Series(amounts_flow, index=dates_flow)
-
-#     dates_amortized, amounts_amortized = run_benchmark(
-#         cash_flows,
-#         dates,
-#         target_currency,
-#         pricer.price_map,
-#         total_returns.total,
-#     )
-#     flow_amortized_value = pandas.Series(
-#         amounts_amortized, index=dates_amortized
-#     )
-
-#     def benchmark_func(benchmark_commodity, additional_returns_rate):
-#         dates_benchmark, amounts_benchmark = run_benchmark(
-#             cash_flows,
-#             dates,
-#             target_currency,
-#             pricer.price_map,
-#             benchmark_commodity=benchmark_commodity,
-#             returns_rate=additional_returns_rate,
-#         )
-#         return pandas.Series(amounts_benchmark, index=dates_benchmark)
-
-#     dates_value, amounts_value = returnslib.compute_portfolio_values(
-#         pricer.price_map, transactions, target_currency
-#     )
-#     portfolio_value = pandas.Series(amounts_value, index=dates_value)
-
-#     header = [
-#         'date',
-#         'amount',
-#         'original_amount',
-#         'original_currency',
-#         'is_dividend',
-#         'source',
-#         'investment',
-#     ]
-#     rows = []
-#     for flow in flows:
-#         if flow.source == 'simulated-close':
-#             continue
-#         amt = float(
-#             convert.convert_amount(
-#                 flow.amount, target_currency, pricer.price_map, date=flow.date
-#             ).number
-#         )
-#         rows.append(
-#             (
-#                 flow.date,
-#                 amt,
-#                 float(flow.amount.number),
-#                 flow.amount.currency,
-#                 flow.is_dividend,
-#                 flow.source,
-#                 flow.account,
-#             )
-#         )
-#     cash_flows_df = pandas.DataFrame(columns=header, data=rows)
-
-#     return ReportData(
-#         cash_flows_df,
-#         returnslib.returns_to_dataframe(
-#             calendar_returns + cumulative_returns + [total_returns]
-#         ),
-#         flow_value,
-#         flow_amortized_value,
-#         portfolio_value,
-#         benchmark_func,
-#     )
 
 
 def get_accounts_table(account_data: list[AccountData]) -> pandas.DataFrame:
@@ -327,71 +177,6 @@ def plot_prices(
     plt.close(fig)
 
     return outplots
-
-
-# def run_benchmark(
-#     flows,
-#     dates,
-#     target_currency,
-#     price_map,
-#     returns_rate=None,
-#     benchmark_commodity=None,
-# ):
-#     date_min = dates[0] - datetime.timedelta(days=1)
-#     date_max = dates[-1]
-#     num_days = (date_max - date_min).days
-#     dates_all = [
-#         dates[0] + datetime.timedelta(days=x) for x in range(num_days)
-#     ]
-
-#     target_daily_return = (
-#         (1 + returns_rate) ** (1.0 / 365) if returns_rate else 1
-#     )
-
-#     if benchmark_commodity:
-#         bench_dates, bench_prices = zip(
-#             *prices.get_all_prices(
-#                 price_map, (benchmark_commodity, target_currency)
-#             )
-#         )
-#         bench_dates = pandas.DatetimeIndex(pandas.to_datetime(bench_dates))
-#         bench_prices = pandas.to_numeric(bench_prices)
-#         benchmark_df = pandas.DataFrame(
-#             data=bench_prices, index=bench_dates, columns=['price']
-#         )
-#         if benchmark_df.index.max() < pandas.to_datetime(date_max):
-#             benchmark_df.loc[pandas.to_datetime(date_max)] = benchmark_df.loc[
-#                 benchmark_df.index.max()
-#             ]
-#         benchmark_df = benchmark_df.resample('D')
-#         benchmark_df = benchmark_df.interpolate(method='linear')
-#         benchmark_df['daily_returns'] = benchmark_df['price'].pct_change()
-
-#     benchmark_current = 0
-#     benchmark_values = []
-#     i = 0
-#     for d in dates_all:
-#         if benchmark_commodity:
-#             benchmark_current = benchmark_current * (
-#                 1.0 + benchmark_df.loc[pandas.to_datetime(d), 'daily_returns']
-#             )
-
-#         benchmark_current = benchmark_current * target_daily_return
-
-#         while i < len(flows) and flows[i].date <= d:
-#             if flows[i].source != 'simulated-close':
-#                 benchmark_current += -float(
-#                     convert.convert_amount(
-#                         flows[i].amount,
-#                         target_currency,
-#                         price_map,
-#                         date=flows[i].date,
-#                     ).number
-#                 )
-#             i += 1
-
-#         benchmark_values.append(benchmark_current)
-#     return dates_all, benchmark_values
 
 
 def get_amortized_value_plot_data_from_flows(
@@ -591,41 +376,20 @@ def get_cumulative_intervals(date: Date) -> list[Interval]:
     ]
 
 
-def generate_price_pages(
-    account_data_map: dict[Account, AccountData],
-    price_map: prices.PriceMap,
-    output_dir: str,
-):
-    """Produce renders of price time series for each currency.
-    This should help us debug issues with price recording, in particulawr,
-    with respect to stock splits."""
+def generate_price_page(base_quote, price_map):
 
-    pricer = Pricer(price_map)
+    all_prices = prices.get_all_prices(price_map, base_quote)
+    if not all_prices:
+        return None
 
-    # Write out a returns file for every account.
-    os.makedirs(output_dir, exist_ok=True)
-    pairs = set(
-        (ad.currency, ad.cost_currency)
-        for ad in account_data_map.values()
-        if ad.currency and ad.cost_currency
-    )
+    dates = np.array([date for date, _ in all_prices])
+    prices_ = np.array([price for _, price in all_prices])
 
-    for base_quote in sorted(pairs):
-        logging.info('Producing price page for %s', base_quote)
-        all_prices = prices.get_all_prices(price_map, base_quote)
-        if not all_prices:
-            continue
+    fig, ax = plt.subplots(1, 1, figsize=[10, 4])
+    set_axis(ax, dates[0], dates[-1])
+    ax.set_title('Prices for {} ({})'.format(*base_quote))
+    ax.plot(dates, prices_, linewidth=0.5)
+    ax.scatter(dates, prices_, s=2.0)
+    fig.autofmt_xdate()
 
-        dates = np.array([date for date, _ in all_prices])
-        prices_ = np.array([price for _, price in all_prices])
-
-        fig, ax = plt.subplots(1, 1, figsize=[10, 4])
-        set_axis(ax, dates[0], dates[-1])
-        ax.set_title('Prices for {} ({})'.format(*base_quote))
-        ax.plot(dates, prices_, linewidth=0.5)
-        ax.scatter(dates, prices_, s=2.0)
-        fig.autofmt_xdate()
-        fig.tight_layout()
-        filename = path.join(output_dir, '{}_{}.svg'.format(*base_quote))
-        plt.savefig(filename)
-        plt.close(fig)
+    return fig

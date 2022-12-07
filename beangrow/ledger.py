@@ -15,32 +15,13 @@ from typing import NamedTuple
 from beangrow.config_pb2 import (
     Config,
     Group,
-)   # pyright: reportGeneralTypeIssues=false
+)
+
+from beangrow.reportdata import ReportData
 
 Date = datetime.date
 TODAY = Date.today()
 
-
-@define
-class ReportData:
-    report: Group
-    cash_flows: pd.DataFrame
-    returns: Returns
-    cumulative_returns: list[Returns]
-    calendar_returns: list[Returns]
-    portfolio_value: pd.DataFrame
-    transactions: data.Entries
-    accounts: pd.DataFrame
-
-    def plot_plotly(self):
-        fig = px.line(self.portfolio_value)
-        fig.update_layout(hovermode='x unified')
-        fig.update_layout(height=600)
-
-        return fig
-        
-
-    
 
 @define
 class Ledger:
@@ -193,7 +174,7 @@ class Ledger:
         st.session_state['reportdata'] = reportdata
 
         return reportdata
-    
+
     def generate_price_pages(self):
         """Produce renders of price time series for each currency.
         This should help us debug issues with price recording, in particulawr,

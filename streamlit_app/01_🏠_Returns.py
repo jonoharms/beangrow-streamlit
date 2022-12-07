@@ -15,7 +15,7 @@ import streamlit as st
 from beangrow import returns as returnslib
 from streamlit_extras.dataframe_explorer import dataframe_explorer
 
-from beangrow.streamlit_helpers import Ledger
+from beangrow.ledger import Ledger
 
 
 st.set_page_config(layout='wide')

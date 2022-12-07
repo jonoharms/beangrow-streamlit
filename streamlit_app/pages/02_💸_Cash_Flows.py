@@ -5,7 +5,7 @@ from streamlit_extras.dataframe_explorer import dataframe_explorer
 
 from beangrow import investments, reports
 from beangrow import returns as returnslib
-from beangrow import streamlit_helpers
+from beangrow import reportdata
 from beangrow.returns import Pricer, Returns
 
 

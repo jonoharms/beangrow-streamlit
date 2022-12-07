@@ -381,7 +381,7 @@ def process_account_entries(
 ) -> Optional[AccountData]:
     """Process a single account."""
     account = investment.asset_account
-    logging.info('Processing account: %s', account)
+    # logging.info('Processing account: %s', account)
 
     # Extract the relevant transactions.
     transactions = extract_transactions_for_account(entries, investment)

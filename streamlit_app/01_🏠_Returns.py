@@ -17,6 +17,7 @@ from streamlit_extras.dataframe_explorer import dataframe_explorer
 
 from beangrow.streamlit_helpers import Ledger
 
+
 st.set_page_config(layout='wide')
 
 Date = datetime.date

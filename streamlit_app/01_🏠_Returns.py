@@ -75,7 +75,7 @@ def main():
         reportdata.returns.div,
     ]
     for col, ret, name in zip(
-        columns, rets, ['Total Return', 'Ex Dividends', 'With Dividends']
+        columns, rets, ['Total Return', 'Ex Dividends', 'Dividends']
     ):
         col.metric(label=name, value=f'{ret*100:.3f}%')
 

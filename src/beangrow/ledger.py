@@ -76,10 +76,13 @@ class Ledger:
             ]
             current_report_index = next(i for i, rep in enumerate(tmp) if rep)
 
+        def format_f(x):
+            return x.name
+
         report = st.sidebar.selectbox(
             'Group',
-            self.config.groups.group,
-            format_func=lambda x: x.name,
+            list(self.config.groups.group),
+            format_func=format_f,
             index=current_report_index,
         )
 
